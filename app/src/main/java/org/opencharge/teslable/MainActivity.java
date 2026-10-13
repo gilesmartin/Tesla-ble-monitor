@@ -162,8 +162,6 @@ public final class MainActivity extends Activity implements TeslaBleService.List
         } else if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             required.add(Manifest.permission.ACCESS_FINE_LOCATION);
         }
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-            required.add(Manifest.permission.POST_NOTIFICATIONS);
         if (required.isEmpty()) {
             action.run();
             return;
