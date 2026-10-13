@@ -113,6 +113,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private String selectedVin = "";
     private String currentVin = "";
     private String expectedAdvertisement = "";
+    private BleScanDiagnostics scanDiagnostics = new BleScanDiagnostics();
     private final Map<String, BluetoothDevice> foundDevices = new HashMap<>();
     private final ArrayDeque<byte[]> writes = new ArrayDeque<>();
     private int mtu = 23;
@@ -150,6 +151,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private final Runnable scanTimeout = () -> {
         if (!scanning) return;
         stopScan();
+        log(scanDiagnostics.summary());
         if (autoConnectAfterScan && desiredConnection) {
             connectionState = "advertisement_unavailable";
             log("No matching Tesla BLE advertisement found; reconnect will back off");
@@ -180,6 +182,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 scanning = false;
                 connectionState = "scan_failed";
                 log("BLE scan failed with code " + errorCode);
+                log(scanDiagnostics.summary());
                 notifyState();
                 if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
             });
@@ -431,6 +434,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         if (expectedAdvertisement.isEmpty() && isValidVin(currentVin)) expectedAdvertisement = expectedAdvertisement(currentVin);
         scanner = availableScanner;
         foundDevices.clear();
+        scanDiagnostics = new BleScanDiagnostics();
         scanning = true;
         connectionState = "scanning";
         try {
@@ -444,6 +448,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             scanning = false;
             connectionState = "scan_failed";
             log("Bluetooth scan could not start; check Bluetooth permissions and adapter state");
+            log(scanDiagnostics.summary());
             notifyState();
             if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
         }
@@ -452,10 +457,23 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private void handleScanResult(ScanResult result) {
         if (!scanning || result.getDevice() == null || !hasBlePermissions()) return;
         BluetoothDevice device = result.getDevice();
-        String name = result.getScanRecord() == null ? null : result.getScanRecord().getDeviceName();
-        if ((name == null || name.isEmpty()) && Build.VERSION.SDK_INT < 31) {
-            try { name = device.getName(); } catch (SecurityException ignored) { }
+        String scanRecordName = result.getScanRecord() == null ? null : result.getScanRecord().getDeviceName();
+        boolean scanRecordNamePresent = scanRecordName != null && !scanRecordName.isEmpty();
+        String cachedName = null;
+        boolean cachedNameChecked = false;
+        if (!scanRecordNamePresent) {
+            cachedNameChecked = true;
+            try { cachedName = device.getName(); } catch (SecurityException ignored) { }
         }
+        boolean cachedNamePresent = cachedName != null && !cachedName.isEmpty();
+        scanDiagnostics.recordResult(scanRecordNamePresent,
+                expectedAdvertisement.equals(scanRecordName), cachedNameChecked,
+                cachedNamePresent, expectedAdvertisement.equals(cachedName));
+
+        // Keep v0.3's matching behavior unchanged for this diagnostic build. The cached name is
+        // observed on Android 12+ but is not used to select/connect a device until verified.
+        String name = scanRecordName;
+        if (!scanRecordNamePresent && Build.VERSION.SDK_INT < 31) name = cachedName;
         if (!expectedAdvertisement.equals(name)) return;
         String address;
         try { address = device.getAddress(); } catch (SecurityException e) { return; }
@@ -464,7 +482,6 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         selectedDevice = device;
         selectedAddress = address;
         selectedVin = currentVin;
-        preferences.edit().putString("last_ble_address", address).apply();
         log("Matching Tesla BLE advertisement found");
         Listener callback = listener;
         if (callback != null) callback.onDeviceFound(name, address, result.getRssi());
