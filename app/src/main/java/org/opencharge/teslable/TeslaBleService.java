@@ -55,6 +55,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     public static final String ACTION_UI_PAIR = "org.opencharge.teslable.UI_PAIR";
     public static final String ACTION_UI_READ = "org.opencharge.teslable.UI_READ";
     public static final String ACTION_UI_DISCONNECT = "org.opencharge.teslable.UI_DISCONNECT";
+    public static final String ACTION_BOOT_RESTORE = "org.opencharge.teslable.BOOT_RESTORE";
     public static final String EXTRA_COMMAND = "cmd";
     public static final String EXTRA_VIN = "vin";
     public static final String EXTRA_TOKEN = "token";
@@ -213,6 +214,13 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
 
     @Override public IBinder onBind(Intent intent) { return binder; }
 
+    static boolean hasSavedReconnectIntent(Context context) {
+        if (context == null) return false;
+        SharedPreferences stored = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        return stored.getBoolean(PREF_DESIRED, false)
+                && isValidVin(stored.getString(PREF_VIN, ""));
+    }
+
     @Override public int onStartCommand(Intent intent, int flags, int startId) {
         serviceStarted = true;
         boolean foreground = ensureForeground();
@@ -246,6 +254,18 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             requestCharge(false);
         } else if (ACTION_UI_DISCONNECT.equals(action)) {
             disconnectExplicitly();
+        } else if (ACTION_BOOT_RESTORE.equals(action)) {
+            if (desiredConnection && isValidVin(currentVin)) {
+                // A new power cycle gets a fresh, bounded reconnect window. Never use a saved
+                // Bluetooth address; beginPassiveReconnectScan matches the saved VIN advertisement.
+                reconnectAttempts = 0;
+                preferences.edit().putInt(PREF_RETRIES, 0).apply();
+                beginPassiveReconnectScan();
+            } else {
+                log("Boot restore skipped; no saved connection intent");
+                stopSelf(startId);
+                return START_NOT_STICKY;
+            }
         } else {
             handleCommand(intent.getStringExtra(EXTRA_COMMAND), intent);
         }
@@ -272,7 +292,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     private boolean isBleAction(String action, Intent intent) {
-        if (ACTION_UI_SCAN.equals(action) || ACTION_UI_CONNECT.equals(action)
+        if (ACTION_BOOT_RESTORE.equals(action) || ACTION_UI_SCAN.equals(action) || ACTION_UI_CONNECT.equals(action)
                 || ACTION_UI_PAIR.equals(action) || ACTION_UI_READ.equals(action)
                 || ACTION_UI_DISCONNECT.equals(action)) return true;
         String command = intent == null ? "" : intent.getStringExtra(EXTRA_COMMAND);

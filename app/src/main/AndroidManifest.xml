@@ -9,8 +9,16 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <application android:allowBackup="false" android:fullBackupContent="false"
         android:label="Tesla BLE Monitor" android:theme="@android:style/Theme.Material.Light.NoActionBar">
+        <receiver android:name=".BootRestoreReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
         <!-- Only adb shell (which holds DUMP) can invoke this command entry point. -->
         <service android:name=".TeslaBleService"
             android:exported="false"
