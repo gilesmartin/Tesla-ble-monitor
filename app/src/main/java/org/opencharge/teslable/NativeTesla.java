@@ -72,10 +72,15 @@ public final class NativeTesla {
     @SuppressWarnings("unused")
     private boolean storageWrite(String key, byte[] value) {
         try {
-            byte[] iv = new byte[12]; new SecureRandom().nextBytes(iv);
-            Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
-            c.init(Cipher.ENCRYPT_MODE,cryptKey(),new GCMParameterSpec(128,iv));
-            byte[] ciphertext = c.doFinal(value);
+Cipher c = Cipher.getInstance("AES/GCM/NoPadding");
+c.init(Cipher.ENCRYPT_MODE, cryptKey());
+
+byte[] ciphertext = c.doFinal(value);
+byte[] iv = c.getIV();
+
+if (iv == null || iv.length != 12) {
+    throw new IllegalStateException("Unexpected AES-GCM IV length");
+}
             byte[] raw = new byte[iv.length+ciphertext.length];
             System.arraycopy(iv,0,raw,0,iv.length);
             System.arraycopy(ciphertext,0,raw,iv.length,ciphertext.length);
