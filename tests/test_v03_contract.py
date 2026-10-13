@@ -69,6 +69,10 @@ class V03Contract(unittest.TestCase):
         self.assertIn("/v1/telemetry", text)
         self.assertIn("/v1/status", text)
 
+    def test_api_read_timeout_allows_local_adb_forward_latency(self):
+        text = source("app/src/main/java/org/opencharge/teslable/TelemetryHttpServer.java")
+        self.assertIn("client.setSoTimeout(5000)", text)
+
     def test_api_distinguishes_missing_stale_and_fresh_telemetry(self):
         text = source("app/src/main/java/org/opencharge/teslable/TeslaBleService.java")
         for marker in ("last_successful_update", "age_seconds", "fresh", "last_known", "battery_percent", "usable_battery_percent", "range_km", "charging"):

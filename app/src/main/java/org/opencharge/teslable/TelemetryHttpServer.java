@@ -94,7 +94,7 @@ public final class TelemetryHttpServer implements AutoCloseable {
             ServerSocket listener = serverSocket;
             if (listener == null) break;
             try (Socket client = listener.accept()) {
-                client.setSoTimeout(1500);
+                client.setSoTimeout(5000);
                 handle(client);
             } catch (SocketTimeoutException ignored) {
                 // Timed accept permits prompt shutdown without a busy loop.
