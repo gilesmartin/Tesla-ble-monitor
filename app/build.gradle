@@ -1,0 +1,23 @@
+plugins { id 'com.android.application' }
+android {
+    namespace 'org.opencharge.teslable'
+    compileSdk 35
+    ndkVersion '28.2.13676358'
+    defaultConfig {
+        applicationId 'org.opencharge.teslable'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '0.1.0-test'
+        externalNativeBuild {
+            cmake {
+                cppFlags '-std=c++23 -fexceptions -frtti'
+                abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64'
+                arguments '-DANDROID_STL=c++_shared'
+            }
+        }
+    }
+    externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' } }
+    buildTypes { release { minifyEnabled false } }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}

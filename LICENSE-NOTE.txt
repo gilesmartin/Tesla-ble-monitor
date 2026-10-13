@@ -1,0 +1,7 @@
+Tesla BLE Monitor test application code: educational prototype, supplied AS IS.
+
+The app dynamically builds against yoziru/tesla-ble, which is licensed AGPL-3.0.
+If distributing an APK, comply with the AGPL-3.0 license, including corresponding-source obligations.
+See https://github.com/yoziru/tesla-ble/blob/main/LICENSE for license text.
+The CMake dependency also fetches nanopb (zlib license) and Mbed TLS (Apache-2.0).
+No Tesla trademarks or endorsements are claimed.
