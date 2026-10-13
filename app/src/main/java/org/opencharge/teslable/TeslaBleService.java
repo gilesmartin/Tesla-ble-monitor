@@ -438,11 +438,13 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         scanning = true;
         connectionState = "scanning";
         try {
-            ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_POWER).build();
+            int scanMode = BleScanPolicy.isHighDutyUserScan(autoConnectAfterScan)
+                    ? ScanSettings.SCAN_MODE_LOW_LATENCY : ScanSettings.SCAN_MODE_LOW_POWER;
+            ScanSettings settings = new ScanSettings.Builder().setScanMode(scanMode).build();
             scanner.startScan(new ArrayList<>(), settings, scanCallback);
             main.removeCallbacks(scanTimeout);
             main.postDelayed(scanTimeout, CONNECT_SCAN_MS);
-            log(autoConnectAfterScan ? "Passively scanning for the saved Tesla advertisement; no wake request is sent" : "Scanning for matching Tesla BLE advertisement");
+            log(autoConnectAfterScan ? "Passively scanning for the saved Tesla advertisement; no wake request is sent" : "User scan running in high-duty mode; no connection or wake request is sent");
             notifyState();
         } catch (SecurityException | IllegalStateException e) {
             scanning = false;
