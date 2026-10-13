@@ -80,7 +80,12 @@ public final class NativeTesla {
             System.arraycopy(iv,0,raw,0,iv.length);
             System.arraycopy(ciphertext,0,raw,iv.length,ciphertext.length);
             return prefs.edit().putString(prefKey(key),Base64.encodeToString(raw,Base64.NO_WRAP)).commit();
-        } catch (Exception e) { onNativeEvent("Encrypted storage write error"); return false; }
+        } catch (Exception e) {
+    android.util.Log.e("TeslaBLE", "Encrypted storage write error", e);
+    onNativeEvent("Encrypted storage write error: "
+        + e.getClass().getSimpleName() + ": " + e.getMessage());
+    return false;
+}
     }
     @SuppressWarnings("unused")
     private boolean storageRemove(String key) { return prefs.edit().remove(prefKey(key)).commit(); }
