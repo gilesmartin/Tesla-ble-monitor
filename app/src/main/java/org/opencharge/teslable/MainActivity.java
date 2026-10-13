@@ -16,6 +16,8 @@ import android.bluetooth.le.BluetoothLeScanner;
 import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanResult;
 import android.content.pm.PackageManager;
+import android.content.Intent;
+import android.util.Log;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
@@ -53,6 +55,9 @@ public final class MainActivity extends Activity implements NativeTesla.Sink {
     private BluetoothGatt gatt;
     private BluetoothGattCharacteristic tx;
     private BluetoothDevice selected;
+    // ADB requests are staged by the shell-restricted AdbCommandActivity.
+    private boolean adbAutoConnect = false;
+    private String pendingAdbAction = null;
     private String vin = "";
     private String expectedName = "";
     private int mtu = 23;
@@ -83,7 +88,84 @@ public final class MainActivity extends Activity implements NativeTesla.Sink {
         vinField.setText(getPreferences(MODE_PRIVATE).getString("vin", ""));
         ui.post(ticker);
         if (adapter == null) say("This device has no Bluetooth adapter");
+        ui.post(this::handleQueuedAdbCommand);
     }
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        ui.post(this::handleQueuedAdbCommand);
+    }
+
+    /** Process only commands placed in private app storage by the shell-protected activity. */
+    private void handleQueuedAdbCommand() {
+        android.content.SharedPreferences q = getSharedPreferences("tesla_adb_commands", MODE_PRIVATE);
+        String cmd = q.getString("cmd", null);
+        if (cmd == null) return;
+        String requestedVin = q.getString("vin", null);
+        // Consume before executing so an activity restart never repeats a pairing request.
+        if (!q.edit().remove("cmd").remove("vin").commit()) {
+            say("ADB command queue could not be cleared");
+            return;
+        }
+        if (requestedVin != null && !requestedVin.isEmpty()) vinField.setText(requestedVin);
+        cmd = cmd.trim().toLowerCase(Locale.US);
+        say("ADB command: " + cmd);
+        switch (cmd) {
+            case "scan":
+                pendingAdbAction = null;
+                adbAutoConnect = false;
+                startScan();
+                break;
+            case "connect":
+            case "pair":
+            case "read-charge":
+                pendingAdbAction = cmd;
+                if (ready) {
+                    performPendingAdbAction();
+                } else if (gatt != null) {
+                    say("GATT connection already in progress; waiting for notifications");
+                } else if (selected != null &&
+                           expectedName.equals(expectedName(vinField.getText().toString().trim().toUpperCase(Locale.US)))) {
+                    connect();
+                } else {
+                    adbAutoConnect = true;
+                    startScan();
+                }
+                break;
+            case "status":
+                say("BLE status: " + (ready ? "transport-ready" : gatt != null ? "connecting" : "disconnected")
+                    + ", selected=" + (selected != null)
+                    + ", pending=" + (pendingAdbAction == null ? "none" : pendingAdbAction));
+                break;
+            case "storage-test":
+                tesla.storageSelfTest();
+                break;
+            case "disconnect":
+                pendingAdbAction = null;
+                adbAutoConnect = false;
+                disconnect();
+                say("ADB disconnect completed");
+                break;
+            default:
+                say("Unknown ADB command: " + cmd);
+        }
+    }
+
+    private void performPendingAdbAction() {
+        if (!ready || pendingAdbAction == null) return;
+        String cmd = pendingAdbAction;
+        pendingAdbAction = null;
+        if ("pair".equals(cmd)) {
+            say("Starting Vehicle Monitor pairing; Tesla key-card confirmation still required");
+            tesla.pairMonitorKey();
+        } else if ("read-charge".equals(cmd)) {
+            say("Reading Tesla ChargeState");
+            tesla.readChargeState();
+        } else if ("connect".equals(cmd)) {
+            say("ADB connect completed: Tesla BLE transport ready");
+        }
+    }
+
     private TextView text(String s, int size) {
         TextView t = new TextView(this); t.setText(s); t.setTextColor(Color.rgb(32,46,57));
         t.setTextSize(size); t.setPadding(0,10,0,10); return t;
@@ -156,7 +238,16 @@ public final class MainActivity extends Activity implements NativeTesla.Sink {
         scanner=adapter.getBluetoothLeScanner();if(scanner==null){say("Scanner unavailable");return;}
         scanner.startScan(scanCallback);scanning=true;
         say("Scanning for " + expectedName + " (10 seconds). Keep phone near car.");
-        ui.postDelayed(this::stopScan,10_000);
+        ui.postDelayed(() -> {
+            if (scanning) {
+                stopScan();
+                if (adbAutoConnect) {
+                    adbAutoConnect = false;
+                    pendingAdbAction = null;
+                    say("ADB scan timed out: no matching Tesla BLE advertisement found");
+                } else say("BLE scan completed");
+            }
+        },10_000);
     }
     private void found(ScanResult result) {
         if(!scanning || result==null || result.getDevice()==null)return;
@@ -168,6 +259,11 @@ public final class MainActivity extends Activity implements NativeTesla.Sink {
         matches.addView(button("Select: " + entry,() -> { selected=device;stopScan();say("Selected " + device.getAddress()); }));
         if(selected==null)selected=device;
         say("Found matching Tesla: " + entry);
+        if (adbAutoConnect) {
+            adbAutoConnect = false;
+            stopScan();
+            connect();
+        }
     }
     private boolean hasConnectPermission() { return Build.VERSION.SDK_INT<31 || checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)==PackageManager.PERMISSION_GRANTED; }
     private void stopScan(){
@@ -216,7 +312,7 @@ public final class MainActivity extends Activity implements NativeTesla.Sink {
         @Override public void onMtuChanged(BluetoothGatt g,int newMtu,int code) { ui.post(() -> {if(g==gatt && code==0){mtu=newMtu;say("BLE MTU: " + mtu);}}); }
         @Override public void onDescriptorWrite(BluetoothGatt g,BluetoothGattDescriptor d,int code) {ui.post(() -> {
             if(g!=gatt || !CCCD.equals(d.getUuid()))return;
-            if(code==0){ready=true;status.setText("Tesla BLE transport ready");tesla.connected(true);say("Notifications enabled. You can pair or read.");}
+            if(code==0){ready=true;status.setText("Tesla BLE transport ready");tesla.connected(true);say("Notifications enabled. You can pair or read.");performPendingAdbAction();}
             else say("Could not enable notifications: " + code);
         });}
         @Override public void onCharacteristicWrite(BluetoothGatt g,BluetoothGattCharacteristic c,int code) {ui.post(() -> {
@@ -262,12 +358,13 @@ public final class MainActivity extends Activity implements NativeTesla.Sink {
         if(tesla!=null)tesla.connected(false);
         if(gatt!=null){try{gatt.disconnect();gatt.close();}catch(Exception ignored){}gatt=null;}
     }
-    private void say(String message){String time=new SimpleDateFormat("HH:mm:ss",Locale.US).format(new Date());
+    private void say(String message){Log.i("TeslaBLE", message);String time=new SimpleDateFormat("HH:mm:ss",Locale.US).format(new Date());
         if(log!=null){String lines=time+"  "+message+"\n"+log.getText();if(lines.length()>9000)lines=lines.substring(0,9000);log.setText(lines);}
     }
     @Override public void onMessage(String s){say(s);}
     @Override public void onTelemetry(String json){
         try {
+            Log.i("TeslaBLE", "ChargeState: " + json);
             JSONObject j=new JSONObject(json);
             String soc=j.isNull("battery_percent")?"unknown":j.getString("battery_percent")+"%";
             String range=j.isNull("range_km")?"unknown":String.format(Locale.US,"%.1f km",j.getDouble("range_km"));

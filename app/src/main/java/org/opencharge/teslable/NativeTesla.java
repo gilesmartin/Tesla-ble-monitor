@@ -101,6 +101,18 @@ if (iv == null || iv.length != 12) {
     @SuppressWarnings("unused")
     private boolean nativeBleWrite(byte[] data) { return sink.onBleWrite(data); }
 
+    /** Exercises the same encrypted SharedPreferences path as Tesla key storage, without logging secrets. */
+    public boolean storageSelfTest() {
+        String name = "tesla_ble_adb_test";
+        byte[] test = "test-encrypted-storage-v1".getBytes(StandardCharsets.US_ASCII);
+        boolean saved = storageWrite(name, test);
+        boolean readBack = saved && java.util.Arrays.equals(storageRead(name), test);
+        boolean removed = storageRemove(name);
+        boolean success = saved && readBack && removed;
+        onNativeEvent("Encrypted storage self-test: " + (success ? "PASS" : "FAIL"));
+        return success;
+    }
+
     public native void init(String vin);
     public native void connected(boolean active);
     public native void onNotification(byte[] data);
