@@ -86,11 +86,10 @@ if (iv == null || iv.length != 12) {
             System.arraycopy(ciphertext,0,raw,iv.length,ciphertext.length);
             return prefs.edit().putString(prefKey(key),Base64.encodeToString(raw,Base64.NO_WRAP)).commit();
         } catch (Exception e) {
-    android.util.Log.e("TeslaBLE", "Encrypted storage write error", e);
-    onNativeEvent("Encrypted storage write error: "
-        + e.getClass().getSimpleName() + ": " + e.getMessage());
-    return false;
-}
+            android.util.Log.e("TeslaBLE", "Encrypted storage write error");
+            onNativeEvent("Encrypted storage write error");
+            return false;
+        }
     }
     @SuppressWarnings("unused")
     private boolean storageRemove(String key) { return prefs.edit().remove(prefKey(key)).commit(); }
@@ -119,5 +118,6 @@ if (iv == null || iv.length != 12) {
     public native void tick();
     public native void pairMonitorKey();
     public native void readChargeState();
+    public native boolean hasPrivateKey();
     public native void close();
 }

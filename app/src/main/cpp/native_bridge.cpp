@@ -200,5 +200,10 @@ Java_org_opencharge_teslable_NativeTesla_readChargeState(JNIEnv* env,jobject) {
         },
         TeslaBLE::WakePolicy::NO_WAKE_FAIL);
 }
+extern "C" JNIEXPORT jboolean JNICALL
+Java_org_opencharge_teslable_NativeTesla_hasPrivateKey(JNIEnv* env,jobject){
+    current_env=env;
+    return vehicle && vehicle->has_private_key() ? JNI_TRUE : JNI_FALSE;
+}
 extern "C" JNIEXPORT void JNICALL
 Java_org_opencharge_teslable_NativeTesla_close(JNIEnv* env,jobject){destroy(env);}
