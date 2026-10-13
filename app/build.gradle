@@ -18,6 +18,23 @@ android {
         }
     }
     externalNativeBuild { cmake { path 'src/main/cpp/CMakeLists.txt'; version '3.22.1' } }
+    // Use permanent signing in CI; otherwise use normal local debug signing.
+    if (System.getenv('TESLA_SIGNING_STORE_FILE') &&
+        System.getenv('TESLA_SIGNING_PASSWORD')) {
+        signingConfigs {
+            teslaPersistent {
+                storeFile file(System.getenv('TESLA_SIGNING_STORE_FILE'))
+                storePassword System.getenv('TESLA_SIGNING_PASSWORD')
+                keyAlias 'tesla-ble-monitor'
+                keyPassword System.getenv('TESLA_SIGNING_PASSWORD')
+            }
+        }
+        buildTypes {
+            debug {
+                signingConfig signingConfigs.teslaPersistent
+            }
+        }
+    }
     buildTypes { release { minifyEnabled false } }
     compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
 }

@@ -21,8 +21,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Restore permanent signing keystore
+        env:
+          KEYSTORE_B64: ${{ secrets.TESLA_KEYSTORE_B64 }}
+        run: |
+          test -n "$KEYSTORE_B64" || exit 1
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/tesla-monitor.p12"
+          chmod 600 "$RUNNER_TEMP/tesla-monitor.p12"
+
       - name: Build debug APK
-        run: gradle --no-daemon :app:assembleDebug
+        env:
+          TESLA_SIGNING_STORE_FILE: ${{ runner.temp }}/tesla-monitor.p12
+          TESLA_SIGNING_PASSWORD: ${{ secrets.TESLA_SIGNING_PASSWORD }}
+        run: |
+          test -n "$TESLA_SIGNING_PASSWORD" || exit 1
+          gradle --no-daemon :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: tesla-ble-monitor-debug-apk
