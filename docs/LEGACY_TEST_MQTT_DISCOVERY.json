@@ -1,0 +1,1699 @@
+{
+  "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+  "entities": [
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_presence",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/presence/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/presence",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "device_class": "presence",
+        "icon": "mdi:car-connected",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_presence",
+        "name": "Presence"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/presence"
+      ],
+      "latest_received": "2026-10-09T13:15:26.975038+00:00"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_car_state_information",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/body-controller-state/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/config",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "device_class": "update",
+        "entity_category": "diagnostic",
+        "icon": "mdi:car-info",
+        "enabled_by_default": "false",
+        "payload_press": "body-controller-state",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_body-controller-state",
+        "name": "Car state information"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_info_bluetooth_adapter",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/info-bt-adapter/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/config",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "device_class": "update",
+        "entity_category": "diagnostic",
+        "icon": "mdi:bluetooth-settings",
+        "payload_press": "info-bt-adapter",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_info-bt-adapter",
+        "name": "Info Bluetooth Adapter"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_list_public_keys_enrolled_on_car",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/list-keys/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:cloud-key",
+        "entity_category": "diagnostic",
+        "payload_press": "list-keys",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_list-keys",
+        "name": "List public keys enrolled on car"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_force_update_all",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/read-state-all/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/config",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:database-sync",
+        "entity_category": "diagnostic",
+        "payload_press": "read-state-all",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_read-state",
+        "name": "Force Update All"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_deploy_key",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/deploy-key/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/config",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "device_class": "update",
+        "icon": "mdi:key-wireless",
+        "entity_category": "config",
+        "payload_press": "deploy-key",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_deploy-key",
+        "name": "Deploy Key"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_regenerate_keys",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/regenerate-keys/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/config",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "device_class": "update",
+        "icon": "mdi:key-change",
+        "payload_press": "generate-keys",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_regenerate-keys",
+        "entity_category": "config",
+        "sw_version": "0.5.0",
+        "name": "ReGenerate Keys"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_set_climate_mode_to_auto",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/auto-seat-and-climate/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:fan-auto",
+        "payload_press": "auto-seat-and-climate",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_auto-seat-and-climate",
+        "name": "Set climate mode to auto"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_remote_start_car",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/drive/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-wireless",
+        "payload_press": "drive",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_drive",
+        "name": "Remote start car"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_flash_lights",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/flash-lights/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-light-high",
+        "payload_press": "flash-lights",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_flash-lights",
+        "name": "Flash lights"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_open_car_frunk",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/frunk-open/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-select",
+        "payload_press": "frunk-open",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_frunk-open",
+        "name": "Open car frunk"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_honk_horn",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/honk/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:bugle",
+        "payload_press": "honk",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_honk",
+        "name": "Honk horn"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_lock_car",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/lock/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-door-lock",
+        "payload_press": "lock",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_lock",
+        "name": "Lock car"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_toggle_between_play_pause",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/media-toggle-playback/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:motion-play",
+        "payload_press": "media-toggle-playback",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_media-toggle-playback",
+        "name": "Toggle between play/pause"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_unlock_car",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/unlock/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:lock-open",
+        "payload_press": "unlock",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_unlock",
+        "name": "Unlock car"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_wake_up_car",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/wake/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:hand-wave",
+        "payload_press": "wake",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_wake",
+        "name": "Wake up car"
+      },
+      "subscribed_topics": [],
+      "latest_received": null
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_charger",
+      "discovery_topic": "homeassistant/switch/tesla_ble_5YJ3E1EA7JF000001/charging/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/charging",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/switch/charge_enable_request",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:flash",
+        "device_class": "switch",
+        "payload_on": "start",
+        "payload_off": "stop",
+        "state_on": "true",
+        "state_off": "false",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging",
+        "name": "Charger"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/switch/charge_enable_request"
+      ],
+      "latest_received": "2026-10-09T15:02:13.351154+00:00"
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_climate",
+      "discovery_topic": "homeassistant/switch/tesla_ble_5YJ3E1EA7JF000001/climate/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/climate",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/switch/is_climate_on",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:fan",
+        "device_class": "switch",
+        "payload_on": "on",
+        "payload_off": "off",
+        "state_on": "true",
+        "state_off": "false",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_climate",
+        "name": "Climate"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/switch/is_climate_on"
+      ],
+      "latest_received": "2026-10-09T15:02:20.536690+00:00"
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_sentry_mode",
+      "discovery_topic": "homeassistant/switch/tesla_ble_5YJ3E1EA7JF000001/sentry-mode/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/sentry-mode",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/switch/sentry_mode",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:cctv",
+        "device_class": "switch",
+        "payload_on": "on",
+        "payload_off": "off",
+        "state_on": "true",
+        "state_off": "false",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_sentry-mode",
+        "name": "Sentry Mode"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/switch/sentry_mode"
+      ],
+      "latest_received": "2026-10-09T15:02:32.536291+00:00"
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_steering_wheel_heater",
+      "discovery_topic": "homeassistant/switch/tesla_ble_5YJ3E1EA7JF000001/steering-wheel-heater/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/steering-wheel-heater",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/switch/steering_wheel_heater",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:steering",
+        "device_class": "switch",
+        "payload_on": "on",
+        "payload_off": "off",
+        "state_on": "true",
+        "state_off": "false",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_steering-wheel-heater",
+        "name": "Steering Wheel Heater"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/switch/steering_wheel_heater"
+      ],
+      "latest_received": null
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_state_polling",
+      "discovery_topic": "homeassistant/switch/tesla_ble_5YJ3E1EA7JF000001/polling/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/variables/polling",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/variables/polling",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-connected",
+        "device_class": "switch",
+        "payload_on": "on",
+        "payload_off": "off",
+        "state_on": "on",
+        "state_off": "off",
+        "retain": "true",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_polling",
+        "entity_category": "diagnostic",
+        "name": "State Polling"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/variables/polling"
+      ],
+      "latest_received": "2026-10-07T19:21:33.497523+00:00"
+    },
+    {
+      "entity_id": "cover.amby_s_3_controls_charge_port",
+      "discovery_topic": "homeassistant/cover/tesla_ble_5YJ3E1EA7JF000001/charge-port/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/charge-port",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/cover/charge_port_door_open",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:ev-plug-tesla",
+        "device_class": "door",
+        "payload_open": "open",
+        "payload_close": "close",
+        "payload_stop": null,
+        "state_open": "true",
+        "state_closed": "false",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge-port",
+        "name": "Charge port"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/cover/charge_port_door_open"
+      ],
+      "latest_received": "2026-10-09T15:02:13.503958+00:00"
+    },
+    {
+      "entity_id": "cover.amby_s_3_controls_trunk",
+      "discovery_topic": "homeassistant/cover/tesla_ble_5YJ3E1EA7JF000001/trunk/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/trunk",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/cover/rear_trunk",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-back",
+        "device_class": "door",
+        "payload_open": "open",
+        "payload_close": "close",
+        "payload_stop": null,
+        "state_open": "true",
+        "state_closed": "false",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_trunk",
+        "name": "Trunk"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/cover/rear_trunk"
+      ],
+      "latest_received": "2026-10-09T15:02:33.012180+00:00"
+    },
+    {
+      "entity_id": "cover.amby_s_3_controls_windows",
+      "discovery_topic": "homeassistant/cover/tesla_ble_5YJ3E1EA7JF000001/windows/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/windows",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/cover/windows",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-door",
+        "device_class": "awning",
+        "payload_open": "vent",
+        "payload_close": "close",
+        "payload_stop": null,
+        "state_open": "true",
+        "state_closed": "false",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_windows",
+        "name": "Windows"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/cover/windows"
+      ],
+      "latest_received": "2026-10-09T15:02:36.531951+00:00"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_charging_limit",
+      "discovery_topic": "homeassistant/number/tesla_ble_5YJ3E1EA7JF000001/charging-set-limit/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/charging-set-limit",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/number/charge_limit_soc",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:battery-90",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging-set-limit",
+        "unit_of_measurement": "%",
+        "name": "Charging Limit",
+        "mode": "slider",
+        "max": "100",
+        "min": "50"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/number/charge_limit_soc"
+      ],
+      "latest_received": "2026-10-09T15:02:14.156092+00:00"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_climate_temp",
+      "discovery_topic": "homeassistant/number/tesla_ble_5YJ3E1EA7JF000001/climate-temp/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/climate-set-temp",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/number/driver_temp_setting",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:thermometer",
+        "device_class": "temperature",
+        "unit_of_measurement": "°C",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_climate-set-temp",
+        "name": "Climate Temp",
+        "mode": "slider",
+        "max": "28",
+        "min": "15"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/number/driver_temp_setting"
+      ],
+      "latest_received": "2026-10-09T15:02:20.255604+00:00"
+    },
+    {
+      "entity_id": "select.amby_s_3_controls_heated_seat_front_left",
+      "discovery_topic": "homeassistant/select/tesla_ble_5YJ3E1EA7JF000001/heater-seat-front-left/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/heater-seat-front-left",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/select/seat_heater_left",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-seat-heater",
+        "options": [
+          "off",
+          "low",
+          "medium",
+          "high"
+        ],
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_heater-seat-front-left",
+        "name": "Heated Seat Front Left"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/select/seat_heater_left"
+      ],
+      "latest_received": "2026-10-09T15:02:22.635552+00:00"
+    },
+    {
+      "entity_id": "select.amby_s_3_controls_heated_seat_front_right",
+      "discovery_topic": "homeassistant/select/tesla_ble_5YJ3E1EA7JF000001/heater-seat-front-right/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/heater-seat-front-right",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/select/seat_heater_right",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-seat-heater",
+        "options": [
+          "off",
+          "low",
+          "medium",
+          "high"
+        ],
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_heater-seat-front-right",
+        "name": "Heated Seat Front Right"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/select/seat_heater_right"
+      ],
+      "latest_received": "2026-10-09T15:02:22.836939+00:00"
+    },
+    {
+      "entity_id": "select.amby_s_3_controls_heated_seat_rear_left",
+      "discovery_topic": "homeassistant/select/tesla_ble_5YJ3E1EA7JF000001/heater-seat-rear-left/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/heater-seat-rear-left",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/select/seat_heater_rear_left",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-seat-heater",
+        "options": [
+          "off",
+          "low",
+          "medium",
+          "high"
+        ],
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_heater-seat-rear-left",
+        "name": "Heated Seat Rear Left"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/select/seat_heater_rear_left"
+      ],
+      "latest_received": "2026-10-09T15:02:23.204175+00:00"
+    },
+    {
+      "entity_id": "select.amby_s_3_controls_heated_seat_rear_right",
+      "discovery_topic": "homeassistant/select/tesla_ble_5YJ3E1EA7JF000001/heater-seat-rear-right/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/heater-seat-rear-right",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/select/seat_heater_rear_right",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-seat-heater",
+        "options": [
+          "off",
+          "low",
+          "medium",
+          "high"
+        ],
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_heater-seat-rear-right",
+        "name": "Heated Seat Rear Right"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/select/seat_heater_rear_right"
+      ],
+      "latest_received": "2026-10-09T15:02:23.375550+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_battery_level",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/charge_state/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/charge_state",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:battery-80",
+        "qos": "1",
+        "device_class": "battery",
+        "unit_of_measurement": "%",
+        "suggested_display_precision": "0",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_state",
+        "name": "Battery Level"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/charge_state"
+      ],
+      "latest_received": "2026-10-09T15:02:10.275855+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_battery_range",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/battery_range/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/battery_range",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:ruler-square-compass",
+        "qos": "1",
+        "device_class": "distance",
+        "unit_of_measurement": "mi",
+        "suggested_display_precision": "0",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_battery_range",
+        "name": "Battery Range"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/battery_range"
+      ],
+      "latest_received": "2026-10-09T15:02:10.456288+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charger_power",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/charger_power/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/charger_power",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:battery-arrow-up",
+        "qos": "1",
+        "device_class": "power",
+        "unit_of_measurement": "kW",
+        "suggested_display_precision": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charger_power",
+        "name": "Charger Power"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/charger_power"
+      ],
+      "latest_received": "2026-10-09T15:02:10.667023+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charger_actual_current",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/charger_actual_current/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/charger_actual_current",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:current-ac",
+        "qos": "1",
+        "device_class": "current",
+        "unit_of_measurement": "A",
+        "suggested_display_precision": "0",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charger_actual_current",
+        "name": "Charger Actual Current"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/charger_actual_current"
+      ],
+      "latest_received": "2026-10-09T15:02:10.840219+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charge_energy_added",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/charge_energy_added/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/charge_energy_added",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:battery-plus-variant",
+        "qos": "1",
+        "device_class": "energy",
+        "unit_of_measurement": "kWh",
+        "suggested_display_precision": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_energy_added",
+        "name": "Charge Energy Added"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/charge_energy_added"
+      ],
+      "latest_received": "2026-10-09T15:02:11.876430+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charge_range_added",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/charge_range_added/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/charge_range_added",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:map-marker-distance",
+        "qos": "1",
+        "device_class": "distance",
+        "unit_of_measurement": "mi",
+        "suggested_display_precision": "0",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_range_added",
+        "name": "Charge Range Added"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/charge_range_added"
+      ],
+      "latest_received": "2026-10-09T15:02:12.396283+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_tyre_pressure_front_left",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/tpms_pressure_fl/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/tpms_pressure_fl",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:car-tire-alert",
+        "qos": "1",
+        "device_class": "pressure",
+        "unit_of_measurement": "bar",
+        "suggested_display_precision": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_tpms_pressure_fl",
+        "name": "Tyre Pressure Front Left"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/tpms_pressure_fl"
+      ],
+      "latest_received": "2026-10-09T15:02:27.483893+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_tyre_pressure_front_right",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/tpms_pressure_fr/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/tpms_pressure_fr",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:car-tire-alert",
+        "qos": "1",
+        "device_class": "pressure",
+        "unit_of_measurement": "bar",
+        "suggested_display_precision": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_tpms_pressure_fr",
+        "name": "Tyre Pressure Front Right"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/tpms_pressure_fr"
+      ],
+      "latest_received": "2026-10-09T15:02:27.736678+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_tyre_pressure_rear_left",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/tpms_pressure_rl/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/tpms_pressure_rl",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:car-tire-alert",
+        "qos": "1",
+        "device_class": "pressure",
+        "unit_of_measurement": "bar",
+        "suggested_display_precision": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_tpms_pressure_rl",
+        "name": "Tyre Pressure Rear Left"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/tpms_pressure_rl"
+      ],
+      "latest_received": "2026-10-09T15:02:28.003909+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_tyre_pressure_rear_right",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/tpms_pressure_rr/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/tpms_pressure_rr",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:car-tire-alert",
+        "qos": "1",
+        "device_class": "pressure",
+        "unit_of_measurement": "bar",
+        "suggested_display_precision": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_tpms_pressure_rr",
+        "name": "Tyre Pressure Rear Right"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/tpms_pressure_rr"
+      ],
+      "latest_received": "2026-10-09T15:02:28.504721+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_inside_temp",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/inside_temp/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/inside_temp",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:thermometer-lines",
+        "qos": "1",
+        "device_class": "temperature",
+        "unit_of_measurement": "°C",
+        "suggested_display_precision": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_inside_temp",
+        "name": "Inside Temp"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/inside_temp"
+      ],
+      "latest_received": "2026-10-09T15:02:18.915830+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_outside_temp",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/outside_temp/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/outside_temp",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:thermometer",
+        "qos": "1",
+        "device_class": "temperature",
+        "unit_of_measurement": "°C",
+        "suggested_display_precision": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_outside_temp",
+        "name": "Outside Temp"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/outside_temp"
+      ],
+      "latest_received": "2026-10-09T15:02:19.847978+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charge_cable",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/charge_cable/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/charge_cable",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:cable-data",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_cable",
+        "name": "Charge Cable"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/charge_cable"
+      ],
+      "latest_received": "2026-10-09T15:02:12.804135+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charging_state",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/charging_state/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/charging_state",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:battery-unknown",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging_state",
+        "name": "Charging State"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/charging_state"
+      ],
+      "latest_received": "2026-10-09T15:02:13.055966+00:00"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_odometer",
+      "discovery_topic": "homeassistant/sensor/tesla_ble_5YJ3E1EA7JF000001/odometer/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/sensor/odometer",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "sensor",
+        "icon": "mdi:counter",
+        "device_class": "distance",
+        "unit_of_measurement": "mi",
+        "suggested_display_precision": "0",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_odometer",
+        "name": "Odometer"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/sensor/odometer"
+      ],
+      "latest_received": "2026-10-09T15:02:41.455700+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_battery_heater",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/battery_heater_on/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/battery_heater_on",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:heat-wave",
+        "payload_on": "true",
+        "payload_off": "false",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_battery_heater_on",
+        "name": "Battery Heater"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/battery_heater_on"
+      ],
+      "latest_received": "2026-10-09T15:02:20.745250+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_front_trunk",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/frunk_open/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/frunk_open",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:car-select",
+        "payload_on": "true",
+        "payload_off": "false",
+        "device_class": "door",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_frunk_open",
+        "name": "Front Trunk"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/frunk_open"
+      ],
+      "latest_received": "2026-10-09T15:02:33.559918+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_window_driver_front",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/window_open_driver_front/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/window_open_driver_front",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:car-door",
+        "payload_on": "true",
+        "payload_off": "false",
+        "device_class": "window",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_window_open_df",
+        "name": "Window Driver Front"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/window_open_driver_front"
+      ],
+      "latest_received": "2026-10-09T15:02:33.676039+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_window_passenger_front",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/window_open_pass_front/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/window_open_pass_front",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:car-door",
+        "payload_on": "true",
+        "payload_off": "false",
+        "device_class": "window",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_window_open_pf",
+        "name": "Window Passenger Front"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/window_open_pass_front"
+      ],
+      "latest_received": "2026-10-09T15:02:33.915738+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_window_driver_rear",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/window_open_driver_rear/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/window_open_driver_rear",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:car-door",
+        "payload_on": "true",
+        "payload_off": "false",
+        "device_class": "window",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_window_open_dr",
+        "name": "Window Driver Rear"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/window_open_driver_rear"
+      ],
+      "latest_received": "2026-10-09T15:02:34.159824+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_window_passenger_rear",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/window_open_pass_rear/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/window_open_pass_rear",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:car-door",
+        "payload_on": "true",
+        "payload_off": "false",
+        "device_class": "window",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_window_open_pr",
+        "name": "Window Passenger Rear"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/window_open_pass_rear"
+      ],
+      "latest_received": "2026-10-09T15:02:34.384800+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_door_driver_front",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/door_open_driver_front/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/door_open_driver_front",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:car-door",
+        "payload_on": "true",
+        "payload_off": "false",
+        "device_class": "door",
+        "qos": "1",
+        "enabled_by_default": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_door_open_df",
+        "name": "Door Driver Front"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/door_open_driver_front"
+      ],
+      "latest_received": "2026-10-09T15:02:34.595969+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_door_lock",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/door_lock/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/door_lock",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:car-door-lock",
+        "payload_on": "false",
+        "payload_off": "true",
+        "device_class": "lock",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_door_lock",
+        "name": "Door Lock"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/door_lock"
+      ],
+      "latest_received": "2026-10-09T15:02:36.297250+00:00"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_awake",
+      "discovery_topic": "homeassistant/binary_sensor/tesla_ble_5YJ3E1EA7JF000001/awake/config",
+      "config": {
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/awake",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "platform": "binary_sensor",
+        "icon": "mdi:sleep-off",
+        "payload_on": "true",
+        "payload_off": "false",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_awake",
+        "name": "Awake"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/binary_sensor/awake"
+      ],
+      "latest_received": "2026-10-09T15:02:38.416068+00:00"
+    },
+    {
+      "entity_id": "button.vehicle_amby_s_3_controls_close_falcon_wing_doors_and_lock_vehicle",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/autosecure-modelx/config",
+      "config": {
+        "availability_topic": "tesla_ble/5YJ3E1EA7JF000001/status/available",
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "router-ble",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:car-door-lock",
+        "optimistic": false,
+        "payload_available": "true",
+        "payload_not_available": "false",
+        "payload_press": "autosecure-modelx",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_autosecure-modelx",
+        "name": "Close falcon-wing doors and lock vehicle"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/status/available"
+      ],
+      "latest_received": "2026-10-15T16:20:55.117934+00:00"
+    },
+    {
+      "entity_id": "button.vehicle_amby_s_3_controls_cancel_scheduled_charge_start",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/charging-schedule-cancel/config",
+      "config": {
+        "availability_topic": "tesla_ble/5YJ3E1EA7JF000001/status/available",
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "router-ble",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:timer-cancel-outline",
+        "optimistic": false,
+        "payload_available": "true",
+        "payload_not_available": "false",
+        "payload_press": "charging-schedule-cancel",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging-schedule-cancel",
+        "name": "Cancel scheduled charge start"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/status/available"
+      ],
+      "latest_received": "2026-10-15T16:20:55.117934+00:00"
+    },
+    {
+      "entity_id": "button.vehicle_amby_s_3_controls_ping_car",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/ping/config",
+      "config": {
+        "availability_topic": "tesla_ble/5YJ3E1EA7JF000001/status/available",
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "router-ble",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:check-network",
+        "optimistic": false,
+        "payload_available": "true",
+        "payload_not_available": "false",
+        "payload_press": "ping",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_ping",
+        "name": "Ping car"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/status/available"
+      ],
+      "latest_received": "2026-10-15T16:20:55.117934+00:00"
+    },
+    {
+      "entity_id": "button.vehicle_amby_s_3_controls_cancel_pending_software_update",
+      "discovery_topic": "homeassistant/button/tesla_ble_5YJ3E1EA7JF000001/software-update-cancel/config",
+      "config": {
+        "availability_topic": "tesla_ble/5YJ3E1EA7JF000001/status/available",
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/command",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "router-ble",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:close-circle",
+        "optimistic": false,
+        "payload_available": "true",
+        "payload_not_available": "false",
+        "payload_press": "software-update-cancel",
+        "qos": "1",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_software-update-cancel",
+        "name": "Cancel pending software update"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/status/available"
+      ],
+      "latest_received": "2026-10-15T16:20:55.117934+00:00"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_charging_current",
+      "discovery_topic": "homeassistant/number/tesla_ble_5YJ3E1EA7JF000001/charging-set-amps/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/charging-set-amps",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/number/charge_current_request",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:current-ac",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging-set-amps",
+        "unit_of_measurement": "A",
+        "name": "Charging Current",
+        "mode": "slider",
+        "max": "32",
+        "min": "0"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/number/charge_current_request"
+      ],
+      "latest_received": "2026-10-09T15:02:13.985888+00:00"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_charging_current_single",
+      "discovery_topic": "homeassistant/number/tesla_ble_5YJ3E1EA7JF000001/charging-set-amps-override/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/charging-set-amps-override",
+        "state_topic": "tesla_ble/5YJ3E1EA7JF000001/number/charge_current_request",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:current-ac",
+        "enabled_by_default": "false",
+        "qos": "1",
+        "optimistic": "false",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging-set-amps-override",
+        "entity_category": "diagnostic",
+        "unit_of_measurement": "A",
+        "name": "Charging Current single",
+        "mode": "slider",
+        "max": "32",
+        "min": "0"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/number/charge_current_request"
+      ],
+      "latest_received": "2026-10-09T15:02:13.985889+00:00"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_polling_interval",
+      "discovery_topic": "homeassistant/number/tesla_ble_5YJ3E1EA7JF000001/polling_interval/config",
+      "config": {
+        "command_topic": "tesla_ble/5YJ3E1EA7JF000001/variables/polling_interval",
+        "device": {
+          "identifiers": [
+            "tesla_ble_5YJ3E1EA7JF000001"
+          ],
+          "manufacturer": "tesla-local-control",
+          "model": "Tesla_BLE",
+          "sw_version": "0.5.0",
+          "name": "Tesla_BLE_5YJ3E1EA7JF000001"
+        },
+        "icon": "mdi:timer-sync",
+        "retain": "true",
+        "unique_id": "tesla_ble_5YJ3E1EA7JF000001_polling_interval",
+        "entity_category": "diagnostic",
+        "unit_of_measurement": "secs",
+        "mode": "slider",
+        "min": "30",
+        "max": "3600",
+        "name": "Polling Interval",
+        "step": "30"
+      },
+      "subscribed_topics": [
+        "tesla_ble/5YJ3E1EA7JF000001/variables/polling_interval"
+      ],
+      "latest_received": "2026-10-07T19:22:50.811040+00:00"
+    }
+  ]
+}
