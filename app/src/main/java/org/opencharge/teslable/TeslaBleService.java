@@ -74,7 +74,6 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private static final int DEFAULT_POLL_SECONDS = 15;
     private static final int MIN_POLL_SECONDS = 15;
     private static final int MAX_POLL_SECONDS = 3600;
-    private static final int MAX_RECONNECT_ATTEMPTS = 8;
     private static final long CONNECT_SCAN_MS = 10_000L;
     private static final long INITIAL_RECONNECT_MS = 5_000L;
     private static final long MAX_RECONNECT_MS = 60_000L;
@@ -267,7 +266,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             disconnectExplicitly();
         } else if (ACTION_BOOT_RESTORE.equals(action)) {
             if (desiredConnection && isValidVin(currentVin)) {
-                // A new power cycle gets a fresh, bounded reconnect window. Never use a saved
+                // A new power cycle resumes unlimited reconnect. Never use a saved
                 // Bluetooth address; beginPassiveReconnectScan matches the saved VIN advertisement.
                 reconnectAttempts = 0;
                 preferences.edit().putInt(PREF_RETRIES, 0).apply();
@@ -485,10 +484,9 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private void beginScan() {
         if (!hasBlePermissions()) {
             connectionState = "permission_required";
-            log("BLE permission missing; connection attempt stopped");
-            desiredConnection = false;
-            preferences.edit().putBoolean(PREF_DESIRED, false).apply();
+            log("BLE permission missing; saved connection intent preserved for retry");
             notifyState();
+            if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
             return;
         }
         boolean bluetoothEnabled;
@@ -498,6 +496,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             connectionState = adapter == null ? "adapter_unavailable" : "bluetooth_disabled";
             log("Bluetooth is disabled or permission is missing; no wake request was sent");
             notifyState();
+            if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
             return;
         }
         if (scanning) return;
@@ -611,6 +610,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             connectionState = "permission_required";
             log("Bluetooth connect permission missing; no connection attempted");
             notifyState();
+            if (desiredConnection) scheduleReconnect();
             return;
         }
         stopScan();
@@ -841,16 +841,9 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
 
     private void scheduleReconnect() {
         if (!desiredConnection) return;
-        if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-            desiredConnection = false;
-            preferences.edit().putBoolean(PREF_DESIRED, false).apply();
-            connectionState = "reconnect_paused";
-            log("Bounded reconnect attempts exhausted; manual connect is required");
-            notifyState();
-            return;
-        }
         long delay = Math.min(MAX_RECONNECT_MS, INITIAL_RECONNECT_MS << Math.min(reconnectAttempts, 4));
-        reconnectAttempts++;
+        // Retry indefinitely; saturate the diagnostic counter rather than overflowing.
+        if (reconnectAttempts < Integer.MAX_VALUE) reconnectAttempts++;
         preferences.edit().putInt(PREF_RETRIES, reconnectAttempts).apply();
         main.removeCallbacks(reconnectTask);
         main.postDelayed(reconnectTask, delay);
