@@ -34,8 +34,6 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -554,11 +552,10 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 expectedAdvertisement.equals(scanRecordName), cachedNameChecked,
                 cachedNamePresent, expectedAdvertisement.equals(cachedName));
 
-        // Keep v0.3's matching behavior unchanged for this diagnostic build. The cached name is
-        // observed on Android 12+ but is not used to select/connect a device until verified.
-        String name = scanRecordName;
-        if (!scanRecordNamePresent && Build.VERSION.SDK_INT < 31) name = cachedName;
-        if (!expectedAdvertisement.equals(name)) return;
+        // Prefer the name in this advertisement; when Android omits it, use the cached device
+        // name only if it independently matches the configured vehicle VIN.
+        String name = scanRecordNamePresent ? scanRecordName : cachedName;
+        if (!TeslaBleAdvertisementMatcher.matchesVin(name, currentVin)) return;
         String address;
         try { address = device.getAddress(); } catch (SecurityException e) { return; }
         if (address == null || foundDevices.containsKey(address)) return;
@@ -973,12 +970,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     private static String expectedAdvertisement(String vin) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-1").digest(vin.getBytes(StandardCharsets.US_ASCII));
-            StringBuilder result = new StringBuilder("S");
-            for (int i = 0; i < 8; i++) result.append(String.format(Locale.US, "%02x", digest[i] & 0xff));
-            return result.append('C').toString();
-        } catch (Exception e) { throw new IllegalStateException(e); }
+        return TeslaBleAdvertisementMatcher.expectedAdvertisement(vin);
     }
 
     private static int clampPollInterval(int seconds) {
