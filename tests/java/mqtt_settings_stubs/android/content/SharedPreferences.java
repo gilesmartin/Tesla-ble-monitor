@@ -1,0 +1,1 @@
+package android.content;public interface SharedPreferences {String getString(String n,String d);boolean getBoolean(String n,boolean d);Editor edit();interface Editor {Editor putString(String n,String v);Editor putBoolean(String n,boolean v);boolean commit();}}

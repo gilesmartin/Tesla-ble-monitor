@@ -8,7 +8,7 @@ MANIFEST = ROOT / "app/src/main/AndroidManifest.xml"
 
 
 class MqttSettingsUiContractTests(unittest.TestCase):
-    def test_settings_are_user_entered_private_and_commands_remain_absent(self):
+    def test_settings_are_private_and_commands_require_separate_opt_in(self):
         activity = ACTIVITY.read_text(encoding="utf-8")
         main = MAIN.read_text(encoding="utf-8")
         manifest = MANIFEST.read_text(encoding="utf-8")
@@ -21,7 +21,10 @@ class MqttSettingsUiContractTests(unittest.TestCase):
         self.assertIn("MqttSettingsActivity.class", main)
         self.assertIn('android:name=".MqttSettingsActivity"', manifest)
         self.assertIn('android:exported="false"', manifest)
-        self.assertIn("legacy HA unique IDs are not migrated", activity)
+        self.assertIn("Default mode is read-only", activity)
+        self.assertIn("legacy compatibility is explicitly enabled", activity)
+        self.assertIn("store.isLegacyCompatibilityEnabled()", activity)
+        self.assertIn("store.isLegacyControlsEnabled()", activity)
         self.assertNotIn("Log.", activity)
         self.assertNotIn("System.out", activity)
         self.assertNotIn("EXTRA_TOKEN", activity)

@@ -125,6 +125,7 @@ public final class MainActivity extends Activity implements TeslaBleService.List
         })));
         body.addView(makeButton("3. Enroll monitor key (manual; tap Tesla key card)", () ->
             withPermissions(() -> dispatch(TeslaBleService.ACTION_UI_PAIR, null, null))));
+        body.addView(makeButton("Authorize existing key for controls (manual; parked only)", this::confirmControllerEnrollment));
         body.addView(makeButton("4. Read ChargeState (no intentional wake)", () ->
             withPermissions(() -> dispatch(TeslaBleService.ACTION_UI_READ, null, null))));
         body.addView(makeButton("Enable 15-second polling", () -> withPermissions(() ->
@@ -142,6 +143,19 @@ public final class MainActivity extends Activity implements TeslaBleService.List
         body.addView(logView);
         scroll.addView(body);
         setContentView(scroll);
+    }
+
+    private void confirmControllerEnrollment() {
+        final String confirmedVin = readVin();
+        if (confirmedVin == null || service == null) { showLog("Connect the saved vehicle first"); return; }
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Authorize the existing key for controls?")
+                .setMessage("Only continue while the vehicle is parked. This reuses the existing private key for VIN "
+                        + confirmedVin + "; it never generates or deletes a key. Tesla must approve the requested Driver role with the physical key card. MQTT control remains separately opt-in. Cancel leaves the key unchanged.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Vehicle parked — request approval", (dialog, which) -> withPermissions(() -> {
+                    if (service == null || !service.requestControllerEnrollment(confirmedVin)) showLog("Enrollment request rejected; connect the matching vehicle with its existing key first");
+                })).show();
     }
 
     private String readVin() {

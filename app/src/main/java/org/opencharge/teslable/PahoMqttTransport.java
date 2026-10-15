@@ -26,11 +26,14 @@ public final class PahoMqttTransport implements MqttBridgePublisher.Transport {
     private volatile Listener listener;
     private ScheduledFuture<?> retryTask;
     private int retryAttempt;
-    private boolean closed;
+    private volatile boolean closed;
+    private volatile boolean closing;
+    private final MqttPublishQueue publishQueue = new MqttPublishQueue(this::sendQueued,
+            (work, delay) -> retryExecutor.schedule(work, delay, TimeUnit.MILLISECONDS), 512);
 
     @Override public synchronized void connect(String brokerUri, String clientId, String username,
             char[] password, String willTopic, String willPayload, Listener callback) {
-        if (callback == null || closed) return;
+        if (callback == null || closed || closing) return;
         listener = callback;
         if (client != null) {
             if (!client.isConnected()) scheduleRetry();
@@ -54,29 +57,32 @@ public final class PahoMqttTransport implements MqttBridgePublisher.Transport {
                 @Override public void connectComplete(boolean reconnect, String serverURI) {
                     Listener target;
                     synchronized (PahoMqttTransport.this) {
-                        if (closed) return;
+                        if (closed || closing) return;
                         retryAttempt = 0;
                         if (retryTask != null) retryTask.cancel(false);
                         retryTask = null;
                         target = listener;
                     }
+                    publishQueue.setConnected(true);
                     if (target != null) target.onConnected();
                 }
 
                 @Override public void connectionLost(Throwable cause) {
                     Listener target;
                     synchronized (PahoMqttTransport.this) {
-                        if (closed) return;
+                        if (closed || closing) return;
                         target = listener;
                         scheduleRetry();
                     }
+                    publishQueue.setConnected(false);
                     if (target != null) target.onConnectionLost();
                 }
 
                 @Override public void messageArrived(String topic, MqttMessage message) {
                     Listener target = listener;
                     if (target != null && message != null) {
-                        target.onMessage(topic, new String(message.getPayload(), StandardCharsets.UTF_8));
+                        target.onMessage(topic, new String(message.getPayload(), StandardCharsets.UTF_8),
+                                message.isRetained(), message.isDuplicate());
                     }
                 }
 
@@ -85,7 +91,8 @@ public final class PahoMqttTransport implements MqttBridgePublisher.Transport {
             connectOnce(created, options);
         } catch (MqttException | RuntimeException ignored) {
             Listener target = listener;
-            if (target != null) target.onConnectionLost();
+            publishQueue.setConnected(false);
+                    if (target != null) target.onConnectionLost();
             scheduleRetry();
         }
     }
@@ -97,10 +104,11 @@ public final class PahoMqttTransport implements MqttBridgePublisher.Transport {
                 @Override public void onFailure(IMqttToken asyncActionToken, Throwable exception) {
                     Listener callback;
                     synchronized (PahoMqttTransport.this) {
-                        if (closed) return;
+                        if (closed || closing) return;
                         callback = listener;
                         scheduleRetry();
                     }
+                    publishQueue.setConnected(false);
                     if (callback != null) callback.onConnectionLost();
                 }
             });
@@ -110,7 +118,7 @@ public final class PahoMqttTransport implements MqttBridgePublisher.Transport {
     }
 
     private synchronized void scheduleRetry() {
-        if (closed || client == null || retryExecutor.isShutdown()
+        if (closed || closing || client == null || retryExecutor.isShutdown()
                 || (retryTask != null && !retryTask.isDone())) return;
         int exponent = Math.min(retryAttempt++, 6);
         long delaySeconds = Math.min(300L, 5L << exponent);
@@ -119,7 +127,7 @@ public final class PahoMqttTransport implements MqttBridgePublisher.Transport {
             MqttConnectOptions options;
             synchronized (PahoMqttTransport.this) {
                 retryTask = null;
-                if (closed || client == null || client.isConnected()) return;
+                if (closed || closing || client == null || client.isConnected()) return;
                 current = client;
                 options = connectOptions;
             }
@@ -128,14 +136,26 @@ public final class PahoMqttTransport implements MqttBridgePublisher.Transport {
     }
 
     @Override public void publish(String topic, String payload, int qos, boolean retained) {
+        if (closed || closing || !isConnected()) throw new IllegalStateException("MQTT is disconnected");
+        if (topic == null || topic.isEmpty() || payload == null || qos < 0 || qos > 2
+                || topic.length() > 512 || payload.getBytes(StandardCharsets.UTF_8).length > 32768) {
+            throw new IllegalArgumentException("Invalid MQTT publication");
+        }
+        publishQueue.offer(topic, payload, qos, retained);
+    }
+
+    private void sendQueued(String topic, String payload, int qos, boolean retained, MqttPublishQueue.Callback done) {
         MqttAsyncClient current = client;
-        if (current == null || !current.isConnected()) return;
+        if (current == null || !current.isConnected()) { done.complete(false); return; }
+        MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
+        message.setQos(qos);
+        message.setRetained(retained);
         try {
-            MqttMessage message = new MqttMessage(payload.getBytes(StandardCharsets.UTF_8));
-            message.setQos(qos);
-            message.setRetained(retained);
-            current.publish(topic, message);
-        } catch (MqttException | RuntimeException ignored) { }
+            current.publish(topic, message, null, new IMqttActionListener() {
+                @Override public void onSuccess(IMqttToken token) { done.complete(true); }
+                @Override public void onFailure(IMqttToken token, Throwable error) { done.complete(false); }
+            });
+        } catch (MqttException ignored) { done.complete(false); }
     }
 
     @Override public void subscribe(String topic, int qos) {
@@ -150,37 +170,31 @@ public final class PahoMqttTransport implements MqttBridgePublisher.Transport {
         return current != null && current.isConnected();
     }
 
-    @Override public void disconnect() {
+    @Override public synchronized void disconnect() {
+        if (closed || closing) return;
+        closing = true;
+        if (retryTask != null) retryTask.cancel(false);
+        listener = null;
+        publishQueue.closeWhenDrained(this::finishDisconnect, 3000L);
+    }
+
+    private void finishDisconnect() {
         MqttAsyncClient current;
         synchronized (this) {
-            if (closed) return;
             closed = true;
-            if (retryTask != null) retryTask.cancel(false);
-            retryTask = null;
-            retryExecutor.shutdownNow();
             current = client;
             client = null;
             connectOptions = null;
-            listener = null;
         }
-        if (current == null) return;
-        if (!current.isConnected()) {
-            closeAsync(current);
-            return;
-        }
-        try {
-            current.disconnect(1000, null, new IMqttActionListener() {
-                @Override public void onSuccess(IMqttToken asyncActionToken) { closeAsync(current); }
-                @Override public void onFailure(IMqttToken asyncActionToken, Throwable exception) { closeAsync(current); }
-            });
-        } catch (MqttException | RuntimeException ignored) {
-            closeAsync(current);
-        }
+        retryExecutor.shutdownNow();
+        if (current != null) closeAsync(current);
     }
 
     private static void closeAsync(MqttAsyncClient target) {
         Thread closer = new Thread(() -> {
-            try { target.close(); } catch (MqttException | RuntimeException ignored) { }
+            // Suppress MQTT DISCONNECT so the broker also applies the offline will if draining timed out.
+            try { target.disconnectForcibly(0L, 0L, false); } catch (MqttException | RuntimeException ignored) {}
+            try { target.close(true); } catch (MqttException | RuntimeException ignored) {}
         }, "TeslaMqttClose");
         closer.setDaemon(true);
         closer.start();

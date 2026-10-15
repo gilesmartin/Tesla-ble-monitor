@@ -6,6 +6,9 @@
 #include <iomanip>
 #include <cmath>
 #include "vehicle.h"
+#include "legacy_command_dispatch.h"
+#include "legacy_extra_command.h"
+#include "legacy_telemetry_json.h"
 #include "client.h"
 #include "car_server.pb.h"
 #include "adapters.h"
@@ -16,6 +19,8 @@
 // Android's main Looper. The library object must not be accessed concurrently.
 namespace {
 JNIEnv* current_env = nullptr;
+uint64_t command_generation = 0;
+std::string configured_vin;
 jobject bridge = nullptr;  // global reference to NativeTesla Java object
 std::shared_ptr<TeslaBLE::Vehicle> vehicle;
 std::shared_ptr<TeslaBLE::BleAdapter> ble;
@@ -127,6 +132,7 @@ std::string chargeJson(const CarServer_ChargeState& c) {
 }
 void destroy(JNIEnv* env) {
     current_env=env;
+    ++command_generation;
     if(vehicle){vehicle->set_connected(false);vehicle.reset();}
     storage.reset();ble.reset();
     if(bridge){env->DeleteGlobalRef(bridge);bridge=nullptr;}
@@ -142,8 +148,19 @@ Java_org_opencharge_teslable_NativeTesla_init(JNIEnv* env,jobject thiz,jstring v
     std::string id(chars?chars:"");if(chars)env->ReleaseStringUTFChars(vin,chars);
     ble=std::make_shared<AndroidBle>();storage=std::make_shared<AndroidStorage>();
     vehicle=std::make_shared<TeslaBLE::Vehicle>(ble,storage);
+    configured_vin=id;
     vehicle->set_vin(id);
-    vehicle->set_charge_state_callback([](const CarServer_ChargeState& c){callText("onNativeTelemetry",chargeJson(c));});
+    vehicle->set_charge_state_callback([](const CarServer_ChargeState& c){
+        callText("onNativeTelemetry",chargeJson(c));
+        callText("onNativeLegacyTelemetry",TeslaAndroid::legacy_charge_json(c));
+    });
+    vehicle->set_vehicle_status_callback([](const VCSEC_VehicleStatus& c){callText("onNativeLegacyTelemetry",TeslaAndroid::legacy_vcsec_json(c));});
+    vehicle->set_climate_state_callback([](const CarServer_ClimateState& c){callText("onNativeLegacyTelemetry",TeslaAndroid::legacy_climate_json(c));});
+    vehicle->set_tire_pressure_state_callback([](const CarServer_TirePressureState& c){callText("onNativeLegacyTelemetry",TeslaAndroid::legacy_tyre_json(c));});
+    vehicle->set_closures_state_callback([](const CarServer_ClosuresState& c){callText("onNativeLegacyTelemetry",TeslaAndroid::legacy_closure_json(c));});
+    vehicle->set_drive_state_callback([](const CarServer_DriveState& c){callText("onNativeLegacyTelemetry",TeslaAndroid::legacy_drive_json(c));});
+    vehicle->set_media_state_callback([](const CarServer_MediaState& c,const TeslaBLE::MediaNowPlaying&){callText("onNativeLegacyTelemetry",TeslaAndroid::legacy_media_json(c));});
+    vehicle->set_software_update_state_callback([](const CarServer_SoftwareUpdateState& c,const std::string&){callText("onNativeLegacyTelemetry",TeslaAndroid::legacy_software_json(c));});
     report("Native Tesla protocol initialized; enrolled private key: " + std::string(vehicle->has_private_key()?"present":"not yet created"));
 }
 extern "C" JNIEXPORT void JNICALL
@@ -164,6 +181,20 @@ extern "C" JNIEXPORT void JNICALL
 Java_org_opencharge_teslable_NativeTesla_tick(JNIEnv* env,jobject) {
     current_env=env;
     if(vehicle)vehicle->loop();
+}
+extern "C" JNIEXPORT jboolean JNICALL
+Java_org_opencharge_teslable_NativeTesla_pairExistingControllerKeyOnOwner(JNIEnv* env,jobject) {
+    current_env=env;
+    if(!vehicle||!vehicle->is_connected()||!vehicle->has_private_key()) {
+        report("Existing-key controller enrollment rejected: matching connected vehicle and existing private key are required");
+        return JNI_FALSE;
+    }
+    report("Locally confirmed Driver-role request for the existing key; physical vehicle approval is required");
+    vehicle->pair(Keys_Role_ROLE_DRIVER, [](TeslaBLE::OperationResult result) {
+        report(result.is_success()?"Enrollment response accepted; verify vehicle approval and control permissions":
+               "Controller enrollment did not complete; no private key was generated or deleted");
+    });
+    return JNI_TRUE;
 }
 extern "C" JNIEXPORT void JNICALL
 Java_org_opencharge_teslable_NativeTesla_pairMonitorKey(JNIEnv* env,jobject) {
@@ -207,3 +238,79 @@ Java_org_opencharge_teslable_NativeTesla_hasPrivateKey(JNIEnv* env,jobject){
 }
 extern "C" JNIEXPORT void JNICALL
 Java_org_opencharge_teslable_NativeTesla_close(JNIEnv* env,jobject){destroy(env);}
+
+// Only an explicit opt-in service command path may call this JNI entry point.
+// It does not subscribe, pair, generate keys, or alter the polling policy.
+extern "C" JNIEXPORT jboolean JNICALL
+Java_org_opencharge_teslable_NativeTesla_executeLegacyOnOwner(JNIEnv* env,jobject,
+        jstring requestId,jstring operation,jobjectArray arguments) {
+    current_env=env;
+    if(!requestId||!operation||!arguments)return JNI_FALSE;
+    auto text=[env](jstring input)->std::string {
+        if(!input)return {};
+        const char* raw=env->GetStringUTFChars(input,nullptr);
+        if(!raw)return {};
+        std::string value(raw);env->ReleaseStringUTFChars(input,raw);return value;
+    };
+    const std::string id=text(requestId);
+    if(id.empty()||id.size()>64)return JNI_FALSE;
+    for(unsigned char c:id)if(!((c>='a'&&c<='z')||(c>='A'&&c<='Z')
+        ||(c>='0'&&c<='9')||c=='_'||c=='-'))return JNI_FALSE;
+    auto result=[id](const char* status,bool acknowledged) {
+        callText("onNativeCommandResult", "{\"request_id\":\""+id+"\",\"status\":\""
+            +status+"\",\"acknowledged\":"+(acknowledged?"true":"false")+"}");
+    };
+    if(!vehicle||!vehicle->is_connected()){result("not_connected",false);return JNI_FALSE;}
+    if(vehicle->pending_command_count()>24){result("busy",false);return JNI_FALSE;}
+    const std::string op=text(operation);
+    const jsize count=env->GetArrayLength(arguments);
+    if(count<0||count>1){result("rejected",false);return JNI_FALSE;}
+    std::vector<std::string> args;
+    for(jsize i=0;i<count;++i){
+        auto item=static_cast<jstring>(env->GetObjectArrayElement(arguments,i));
+        if(!item){result("rejected",false);return JNI_FALSE;}
+        args.push_back(text(item));env->DeleteLocalRef(item);
+    }
+    const auto generation=command_generation;
+    auto complete=[generation,result](TeslaBLE::OperationResult response) {
+            if(generation!=command_generation)return;
+            result(response.is_success()?"succeeded":response.is_skipped()?"skipped":"failed",
+                   response.is_success());
+        };
+    bool queued=TeslaAndroid::dispatch_legacy_command(*vehicle,op,args,complete);
+    if(!queued)queued=TeslaAndroid::dispatch_legacy_extra(*vehicle,op,args,configured_vin,complete);
+    if(!queued)result("rejected",false);
+    return queued?JNI_TRUE:JNI_FALSE;
+}
+
+extern "C" JNIEXPORT jboolean JNICALL
+Java_org_opencharge_teslable_NativeTesla_readLegacyStateOnOwner(JNIEnv* env,jobject,jstring section) {
+    current_env=env;
+    if(!section||!vehicle||!vehicle->is_connected()||vehicle->pending_command_count()>16)return JNI_FALSE;
+    const char* raw=env->GetStringUTFChars(section,nullptr);if(!raw)return JNI_FALSE;
+    std::string selected(raw);env->ReleaseStringUTFChars(section,raw);
+    struct Read {const char* name;int tag;};
+    const Read reads[]={
+        {"charge",CarServer_GetVehicleData_getChargeState_tag},
+        {"climate",CarServer_GetVehicleData_getClimateState_tag},
+        {"tyre",CarServer_GetVehicleData_getTirePressureState_tag},
+        {"closure",CarServer_GetVehicleData_getClosuresState_tag},
+        {"drive",CarServer_GetVehicleData_getDriveState_tag},
+        {"media",CarServer_GetVehicleData_getMediaState_tag},
+        {"software",CarServer_GetVehicleData_getSoftwareUpdateState_tag}
+    };
+    bool recognized=selected=="all"||selected=="vcsec";
+    for(const auto& read:reads)if(selected==read.name)recognized=true;
+    if(!recognized)return JNI_FALSE;
+    if(selected=="all"||selected=="vcsec")vehicle->vcsec_poll(TeslaBLE::WakePolicy::NO_WAKE_SKIP);
+    for(const auto& read:reads){
+        if(selected!="all"&&selected!=read.name)continue;
+        const int tag=read.tag;
+        vehicle->send_command_result(UniversalMessage_Domain_DOMAIN_INFOTAINMENT,
+            std::string("Legacy read ")+read.name,
+            [tag](TeslaBLE::Client* client,uint8_t* buf,size_t* len){
+                return client->build_car_server_get_vehicle_data_message(buf,len,tag);
+            }, [](TeslaBLE::OperationResult){}, TeslaBLE::WakePolicy::NO_WAKE_FAIL);
+    }
+    return JNI_TRUE;
+}

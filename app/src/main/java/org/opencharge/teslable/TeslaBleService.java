@@ -103,6 +103,8 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private ApiTokenStore apiTokenStore;
     private MqttConfigStore mqttConfigStore;
     private MqttBridgePublisher mqttPublisher;
+    private LegacyMqttPublisher legacyMqttPublisher;
+    private String legacyMqttVin = "";
     private NativeTesla tesla;
     private boolean nativeInitialized;
     private String nativeVin = "";
@@ -142,8 +144,9 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private volatile TelemetryHttpServer apiServer;
     private final Runnable mqttFreshnessTask = new Runnable() {
         @Override public void run() {
-            if (mqttPublisher == null) return;
+            if (mqttPublisher == null && legacyMqttPublisher == null) return;
             updateMqttTelemetry();
+            if (legacyMqttPublisher != null) legacyMqttPublisher.refreshAvailability();
             main.postDelayed(this, MQTT_FRESHNESS_CHECK_MS);
         }
     };
@@ -380,7 +383,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             }
             case "mqtt-reconfigure":
                 reconfigureMqttPublisher();
-                log("MQTT settings reloaded; telemetry publishing remains read-only");
+                log("MQTT settings reloaded; legacy compatibility and controls require separate saved opt-ins");
                 break;
             case "stop": stopExplicitly(); break;
             default:
@@ -392,19 +395,80 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private void reconfigureMqttPublisher() {
         main.removeCallbacks(mqttFreshnessTask);
         MqttBridgePublisher previous = mqttPublisher;
+        LegacyMqttPublisher previousLegacy = legacyMqttPublisher;
         mqttPublisher = null;
+        legacyMqttPublisher = null;
+        legacyMqttVin = "";
         if (previous != null) previous.close();
+        if (previousLegacy != null) previousLegacy.close();
         if (mqttConfigStore == null) return;
         MqttConfigStore.Settings settings = mqttConfigStore.loadForService();
         if (settings == null) return;
         try {
-            mqttPublisher = new MqttBridgePublisher(settings.getBrokerUri(), settings.isAllowPlaintext(),
-                    settings.getUsername(), settings.getPassword(), settings.getDeviceId(), new PahoMqttTransport());
-            mqttPublisher.start();
-            updateMqttTelemetry();
+            if (settings.isLegacyCompatibilityEnabled()) {
+                if (!isValidVin(currentVin)) {
+                    log("Legacy MQTT requires a valid saved vehicle VIN; no subscriptions were started");
+                    return;
+                }
+                final String expectedVin = currentVin;
+                legacyMqttVin = expectedVin;
+                legacyMqttPublisher = new LegacyMqttPublisher(settings.getBrokerUri(), settings.isAllowPlaintext(),
+                        settings.getUsername(), settings.getPassword(), expectedVin, new PahoMqttTransport(),
+                        new LegacyMqttPublisher.Owner() {
+                    @Override public void post(Runnable work) { main.post(work); }
+                    @Override public long now() { return android.os.SystemClock.elapsedRealtime(); }
+                    @Override public long freshnessMillis() { return Math.max(90000L, pollIntervalSeconds * 3000L); }
+                    @Override public boolean isReady() { return ready && nativeInitialized && expectedVin.equals(currentVin) && expectedVin.equals(nativeVin); }
+                    @Override public boolean controlsEnabled() { return settings.isLegacyControlsEnabled(); }
+                    @Override public boolean execute(String id, String op, String[] args) {
+                        if (!isReady()) return false;
+                        return tesla.executeLegacy(id, op, args);
+                    }
+                    @Override public boolean read(String section) {
+                        return isReady() && tesla.readLegacyState(section);
+                    }
+                    @Override public boolean setPolicy(Boolean polling, Integer seconds) {
+                        if (seconds != null && (seconds < 30 || seconds > 3600)) return false;
+                        boolean oldPolling = pollEnabled;
+                        int oldInterval = pollIntervalSeconds;
+                        boolean newPolling = polling == null ? oldPolling : polling;
+                        int newInterval = seconds == null ? oldInterval : seconds;
+                        if (!preferences.edit().putBoolean(PREF_POLL, newPolling).putInt(PREF_INTERVAL, newInterval).commit()) {
+                            preferences.edit().putBoolean(PREF_POLL, oldPolling).putInt(PREF_INTERVAL, oldInterval).commit();
+                            return false;
+                        }
+                        pollEnabled = newPolling;
+                        pollIntervalSeconds = newInterval;
+                        pollFailures = 0;
+                        main.removeCallbacks(pollTask);
+                        if (ready && pollEnabled && !pollInFlight) schedulePoll(pollIntervalSeconds * 1000L);
+                        notifyState();
+                        return true;
+                    }
+                    @Override public void diagnostic(String action) {
+                        if ("info-bt-adapter".equals(action)) log("Android Bluetooth adapter present=" + (adapter != null) + "; permission=" + hasBlePermissions() + "; GATT ready=" + ready);
+                        else if ("read-state-envcheck".equals(action)) log("Android BLE owner diagnostic: native initialized=" + nativeInitialized + "; existing key present=" + keyPresent + "; no shell/BlueZ backend is used");
+                        else log("MQTT key operation requires a deliberate local enrollment workflow and physical vehicle approval; existing key was not changed");
+                    }
+                    @Override public void abortTimedOutCommand() {
+                        if (serviceStarted) failConnection("MQTT command canceled or timed out; outcome may be unknown; reconnect preserves the existing key");
+                        else closeGattOnly();
+                    }
+                });
+                legacyMqttPublisher.start();
+            } else {
+                mqttPublisher = new MqttBridgePublisher(settings.getBrokerUri(), settings.isAllowPlaintext(),
+                        settings.getUsername(), settings.getPassword(), settings.getDeviceId(), new PahoMqttTransport());
+                mqttPublisher.start();
+                updateMqttTelemetry();
+            }
             main.postDelayed(mqttFreshnessTask, MQTT_FRESHNESS_CHECK_MS);
         } catch (RuntimeException ignored) {
+            if (mqttPublisher != null) mqttPublisher.close();
+            if (legacyMqttPublisher != null) legacyMqttPublisher.close();
             mqttPublisher = null;
+            legacyMqttPublisher = null;
+            legacyMqttVin = "";
             log("MQTT bridge configuration was rejected; publishing is disabled");
         }
     }
@@ -776,6 +840,19 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         }
     }
 
+    /** Deliberate in-app confirmation only; never dispatched by MQTT, intents, or the ADB command parser. */
+    public boolean requestControllerEnrollment(String confirmedVin) {
+        if (Looper.myLooper() != Looper.getMainLooper()) return false;
+        if (!ready || !nativeInitialized || !keyPresent || !currentVin.equals(confirmedVin) || !nativeVin.equals(confirmedVin)) return false;
+        if (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand()) {
+            log("Wait for the outstanding vehicle command before requesting local key authorization");
+            return false;
+        }
+        boolean requested = tesla.pairExistingControllerKey();
+        if (requested) log("Existing-key Driver enrollment requested locally; physical Tesla approval and permission verification are still required");
+        return requested;
+    }
+
     private void pairVehicle() {
         if (!ready || !nativeInitialized) {
             log("Pair command requires an active BLE connection; no automatic enrollment was started");
@@ -803,7 +880,9 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         main.postDelayed(chargeTimeout, CHARGE_TIMEOUT_MS);
         try {
             // Native code uses NO_WAKE_SKIP/NO_WAKE_FAIL; this path never intentionally wakes the car.
-            tesla.readChargeState();
+            if (fromPoll && legacyMqttPublisher != null) {
+                if (!tesla.readLegacyState("all")) { finishChargeFailure("Legacy state poll could not be queued"); return; }
+            } else tesla.readChargeState();
             if (!fromPoll) log("ChargeState read requested under no-wake policy");
         } catch (RuntimeException e) {
             finishChargeFailure("ChargeState read could not be started");
@@ -813,7 +892,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private void runPoll() {
         if (!pollEnabled) return;
         if (!ready) return; // No BLE work while unavailable; reconnect scanning has its own backoff.
-        if (pollInFlight) {
+        if (pollInFlight || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
             schedulePoll(pollIntervalSeconds * 1000L);
             return;
         }
@@ -834,7 +913,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         if (pollEnabled && ready) {
             long base = pollIntervalSeconds * 1000L;
             long multiplier = 1L << Math.min(pollFailures, 4);
-            schedulePoll(Math.min(120_000L, base * multiplier));
+            schedulePoll(Math.min(Math.max(base, 120_000L), base * multiplier));
         }
         notifyState();
     }
@@ -931,6 +1010,12 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         if (!isValidVin(vin)) return;
         String normalized = vin.trim().toUpperCase(Locale.US);
         if (!normalized.equals(currentVin)) {
+            if (legacyMqttPublisher != null) {
+                legacyMqttPublisher.close();
+                legacyMqttPublisher = null;
+                legacyMqttVin = "";
+                log("Legacy MQTT stopped after target VIN changed; reapply MQTT settings after verifying the new target");
+            }
             selectedDevice = null;
             selectedAddress = "";
             selectedVin = "";
@@ -1139,6 +1224,43 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         }
     }
 
+    @Override public void onCommandResult(String json) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            LegacyMqttPublisher target = legacyMqttPublisher;
+            main.post(() -> { if (target == legacyMqttPublisher) onCommandResult(json); });
+            return;
+        }
+        if (legacyMqttPublisher == null || json == null || json.length() > 32768) return;
+        try {
+            JSONObject value = new JSONObject(json);
+            legacyMqttPublisher.onCommandResult(value.optString("request_id", ""), value.optString("status", "failed"), value.optBoolean("acknowledged", false));
+        } catch (JSONException ignored) { log("Native MQTT command result was malformed; no success was assumed"); }
+    }
+
+    @Override public void onLegacyTelemetry(String json) {
+        if (Looper.myLooper() != Looper.getMainLooper()) {
+            LegacyMqttPublisher target = legacyMqttPublisher;
+            main.post(() -> { if (target == legacyMqttPublisher) onLegacyTelemetry(json); });
+            return;
+        }
+        if (legacyMqttPublisher == null || !legacyMqttVin.equals(nativeVin) || !legacyMqttVin.equals(currentVin)
+                || json == null || json.length() > 32768) return;
+        try {
+            JSONObject event = new JSONObject(json);
+            String section = event.optString("section", "");
+            JSONObject data = event.optJSONObject("values");
+            if (data == null) return;
+            Map<String, String> observed = new HashMap<>();
+            java.util.Iterator<String> fields = data.keys();
+            while (fields.hasNext()) {
+                String name = fields.next();
+                Object value = data.opt(name);
+                if (value instanceof Number || value instanceof Boolean || value instanceof String) observed.put(name, value.toString());
+            }
+            legacyMqttPublisher.onTelemetry(section, LegacyMqttStateMapper.map(section, observed));
+        } catch (JSONException ignored) { log("Native legacy telemetry was malformed; cached values were not refreshed"); }
+    }
+
     @Override public void onTelemetry(String json) {
         if (json == null) return;
         try {
@@ -1177,6 +1299,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         main.removeCallbacks(chargeTimeout);
         main.removeCallbacks(mqttFreshnessTask);
         if (mqttPublisher != null) { mqttPublisher.close(); mqttPublisher = null; }
+        if (legacyMqttPublisher != null) { legacyMqttPublisher.close(); legacyMqttPublisher = null; }
         stopScan();
         closeGattOnly();
         if (apiServer != null) { apiServer.close(); apiServer = null; }

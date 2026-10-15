@@ -20,6 +20,8 @@ public final class NativeTesla {
     public interface Sink {
         void onMessage(String text);
         void onTelemetry(String json);
+        default void onCommandResult(String json) {}
+        default void onLegacyTelemetry(String json) {}
         boolean onBleWrite(byte[] bytes);
     }
     private static final String ALIAS = "tesla_ble_monitor_local_key_v1";
@@ -98,6 +100,10 @@ if (iv == null || iv.length != 12) {
     @SuppressWarnings("unused")
     private void onNativeTelemetry(String json) { sink.onTelemetry(json); }
     @SuppressWarnings("unused")
+    private void onNativeCommandResult(String json) { sink.onCommandResult(json); }
+    @SuppressWarnings("unused")
+    private void onNativeLegacyTelemetry(String json) { sink.onLegacyTelemetry(json); }
+    @SuppressWarnings("unused")
     private boolean nativeBleWrite(byte[] data) { return sink.onBleWrite(data); }
 
     /** Exercises the same encrypted SharedPreferences path as Tesla key storage, without logging secrets. */
@@ -111,6 +117,32 @@ if (iv == null || iv.length != 12) {
         onNativeEvent("Encrypted storage self-test: " + (success ? "PASS" : "FAIL"));
         return success;
     }
+
+    /** Queue on the sole BLE owner; success is delivered separately after vehicle acknowledgement. */
+    public boolean executeLegacy(String requestId, String operation, String[] arguments) {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            throw new IllegalStateException("Vehicle commands must run on the BLE owner's Looper");
+        }
+        return executeLegacyOnOwner(requestId, operation, arguments);
+    }
+    private native boolean executeLegacyOnOwner(String requestId, String operation, String[] arguments);
+
+    public boolean readLegacyState(String section) {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            throw new IllegalStateException("Vehicle reads must run on the BLE owner's Looper");
+        }
+        return readLegacyStateOnOwner(section);
+    }
+    private native boolean readLegacyStateOnOwner(String section);
+
+    /** Local, physically confirmed role request. Missing existing keys are rejected, never generated here. */
+    public boolean pairExistingControllerKey() {
+        if (android.os.Looper.myLooper() != android.os.Looper.getMainLooper()) {
+            throw new IllegalStateException("Enrollment must run on the BLE owner's Looper");
+        }
+        return pairExistingControllerKeyOnOwner();
+    }
+    private native boolean pairExistingControllerKeyOnOwner();
 
     public native void init(String vin);
     public native void connected(boolean active);

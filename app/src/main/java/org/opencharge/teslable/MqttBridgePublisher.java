@@ -137,6 +137,9 @@ public final class MqttBridgePublisher {
             void onConnected();
             void onConnectionLost();
             void onMessage(String topic, String payload);
+            default void onMessage(String topic, String payload, boolean retained, boolean duplicate) {
+                onMessage(topic, payload);
+            }
         }
     }
 }
