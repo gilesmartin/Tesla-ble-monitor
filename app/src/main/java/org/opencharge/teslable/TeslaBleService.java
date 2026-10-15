@@ -727,6 +727,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         @Override public void onServicesDiscovered(BluetoothGatt source, int status) {
             main.post(() -> {
                 if (source != gatt) return;
+                if (!hasBlePermissions()) { failConnection("Bluetooth permission was revoked during GATT setup"); return; }
                 if (status != BluetoothGatt.GATT_SUCCESS) { failConnection("Tesla GATT service discovery failed"); return; }
                 try {
                     BluetoothGattService service = source.getService(GATT_SERVICE);
@@ -800,8 +801,11 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     };
 
     @SuppressWarnings("deprecation")
-    private static boolean writeDescriptorCompat(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor descriptor, byte[] value) {
-        if (Build.VERSION.SDK_INT >= 33) return bluetoothGatt.writeDescriptor(descriptor, value) == BluetoothStatusCodes.SUCCESS;
+    private boolean writeDescriptorCompat(BluetoothGatt bluetoothGatt, BluetoothGattDescriptor descriptor, byte[] value) {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) return false;
+            return bluetoothGatt.writeDescriptor(descriptor, value) == BluetoothStatusCodes.SUCCESS;
+        }
         descriptor.setValue(value);
         return bluetoothGatt.writeDescriptor(descriptor);
     }
@@ -986,7 +990,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         tx = null;
         if (old != null) {
             try { old.disconnect(); } catch (SecurityException | IllegalStateException ignored) { }
-            try { old.close(); } catch (IllegalStateException ignored) { }
+            try { old.close(); } catch (SecurityException | IllegalStateException ignored) { }
         }
     }
 
