@@ -1041,6 +1041,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         JSONObject api = new JSONObject();
         try {
             response.put("schema_version", 1);
+            response.put("target_vin_fingerprint", TeslaBleAdvertisementMatcher.shortVinFingerprint(currentVin));
             response.put("service_running", serviceStarted);
             response.put("foreground", foregroundActive);
             response.put("ble_connection_status", connectionState);

@@ -20,6 +20,12 @@ public final class TeslaBleAdvertisementMatcher {
         }
     }
 
+    /** Returns only the first 8 hex characters of the VIN-derived beacon hash; never the VIN. */
+    public static String shortVinFingerprint(String vin) {
+        String expected = expectedAdvertisement(vin);
+        return expected.length() == 18 ? expected.substring(1, 9) : "";
+    }
+
     public static boolean matchesVin(String deviceName, String vin) {
         if (deviceName == null || vin == null || vin.length() != 17) return false;
         String expected = expectedAdvertisement(vin);

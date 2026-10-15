@@ -39,6 +39,8 @@ public final class TeslaBleAdvertisementMatcherHarness {
         check(!TeslaBleAdvertisementMatcher.hasUnknownHashSuffix("S0000000000000000X", vin), "wrong hash prefix rejected");
         check(TeslaBleAdvertisementMatcher.hasTeslaPrefix("Tesla 000000"), "Tesla label classified");
         check(!TeslaBleAdvertisementMatcher.hasTeslaPrefix("Other 000000"), "other label rejected");
+        check(TeslaBleAdvertisementMatcher.shortVinFingerprint(vin).equals("1a87a5a7"), "short derived VIN fingerprint");
+        check(TeslaBleAdvertisementMatcher.shortVinFingerprint("bad").isEmpty(), "invalid VIN has no fingerprint");
         System.out.print("matcher cases passed");
     }
 }
@@ -63,6 +65,11 @@ public final class TeslaBleAdvertisementMatcherHarness {
         self.assertIn("String name = scanRecordNamePresent ? scanRecordName : cachedName;", service)
         self.assertIn("TeslaBleAdvertisementMatcher.matchesVin(name, currentVin)", service)
         self.assertIn("return TeslaBleAdvertisementMatcher.expectedAdvertisement(vin);", service)
+
+
+    def test_status_exposes_only_a_short_target_fingerprint(self):
+        service = (ROOT / "app/src/main/java/org/opencharge/teslable/TeslaBleService.java").read_text(encoding="utf-8")
+        self.assertIn('response.put("target_vin_fingerprint", TeslaBleAdvertisementMatcher.shortVinFingerprint(currentVin));', service)
 
 
 if __name__ == "__main__":
