@@ -39,6 +39,7 @@ import java.security.MessageDigest;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -80,6 +81,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private static final long INITIAL_RECONNECT_MS = 5_000L;
     private static final long MAX_RECONNECT_MS = 60_000L;
     private static final long CHARGE_TIMEOUT_MS = 12_000L;
+    private static final long MQTT_FRESHNESS_CHECK_MS = 15_000L;
 
     private static final UUID GATT_SERVICE = UUID.fromString("00000211-b2d1-43f0-9b88-960cebf8b91e");
     private static final UUID GATT_WRITE = UUID.fromString("00000212-b2d1-43f0-9b88-960cebf8b91e");
@@ -102,6 +104,8 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private final Object stateLock = new Object();
     private SharedPreferences preferences;
     private ApiTokenStore apiTokenStore;
+    private MqttConfigStore mqttConfigStore;
+    private MqttBridgePublisher mqttPublisher;
     private NativeTesla tesla;
     private boolean nativeInitialized;
     private String nativeVin = "";
@@ -139,6 +143,13 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private volatile long lastChargeAtMs;
     private Listener listener;
     private volatile TelemetryHttpServer apiServer;
+    private final Runnable mqttFreshnessTask = new Runnable() {
+        @Override public void run() {
+            if (mqttPublisher == null) return;
+            updateMqttTelemetry();
+            main.postDelayed(this, MQTT_FRESHNESS_CHECK_MS);
+        }
+    };
 
     private final Runnable ticker = new Runnable() {
         @Override public void run() {
@@ -194,6 +205,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         super.onCreate();
         preferences = getSharedPreferences(PREFS, MODE_PRIVATE);
         apiTokenStore = new ApiTokenStore(this);
+        mqttConfigStore = new MqttConfigStore(this);
         BluetoothManager manager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
         adapter = manager == null ? null : manager.getAdapter();
         desiredConnection = preferences.getBoolean(PREF_DESIRED, false);
@@ -210,6 +222,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         tesla = new NativeTesla(this, this);
         if (isValidVin(currentVin)) initializeNativeForVin(currentVin);
         startApiServer();
+        reconfigureMqttPublisher();
     }
 
     @Override public IBinder onBind(Intent intent) { return binder; }
@@ -368,11 +381,60 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 notifyState();
                 break;
             }
+            case "mqtt-reconfigure":
+                reconfigureMqttPublisher();
+                log("MQTT settings reloaded; telemetry publishing remains read-only");
+                break;
             case "stop": stopExplicitly(); break;
             default:
                 log("Unsupported ADB command");
                 break;
         }
+    }
+
+    private void reconfigureMqttPublisher() {
+        main.removeCallbacks(mqttFreshnessTask);
+        MqttBridgePublisher previous = mqttPublisher;
+        mqttPublisher = null;
+        if (previous != null) previous.close();
+        if (mqttConfigStore == null) return;
+        MqttConfigStore.Settings settings = mqttConfigStore.loadForService();
+        if (settings == null) return;
+        try {
+            mqttPublisher = new MqttBridgePublisher(settings.getBrokerUri(), settings.isAllowPlaintext(),
+                    settings.getUsername(), settings.getPassword(), settings.getDeviceId(), new PahoMqttTransport());
+            mqttPublisher.start();
+            updateMqttTelemetry();
+            main.postDelayed(mqttFreshnessTask, MQTT_FRESHNESS_CHECK_MS);
+        } catch (RuntimeException ignored) {
+            mqttPublisher = null;
+            log("MQTT bridge configuration was rejected; publishing is disabled");
+        }
+    }
+
+    private void updateMqttTelemetry() {
+        MqttBridgePublisher target = mqttPublisher;
+        if (target == null) return;
+        try {
+            JSONObject snapshot = new JSONObject(buildTelemetryJson());
+            boolean available = snapshot.optBoolean("available", false);
+            boolean fresh = snapshot.optBoolean("fresh", false);
+            Object chargingValue = snapshot.opt("charging");
+            Boolean charging = chargingValue instanceof Boolean ? (Boolean) chargingValue : null;
+            Map<String, String> states = MqttTelemetryMapper.toStates(available, fresh,
+                    numericOrNull(snapshot, "battery_percent"),
+                    numericOrNull(snapshot, "usable_battery_percent"),
+                    numericOrNull(snapshot, "range_km"), charging);
+            target.onTelemetry(available, fresh, states);
+        } catch (JSONException | RuntimeException ignored) {
+            target.onTelemetry(false, false, Collections.emptyMap());
+        }
+    }
+
+    private static Double numericOrNull(JSONObject object, String key) {
+        if (object == null || !object.has(key) || object.isNull(key)) return null;
+        Object value = object.opt(key);
+        return value instanceof Number ? ((Number) value).doubleValue() : null;
     }
 
     private void startExplicitConnection(String vin) {
@@ -1096,6 +1158,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             log("Authenticated ChargeState received and stored");
             Listener callback = listener;
             if (callback != null) callback.onTelemetry(buildTelemetryJson());
+            updateMqttTelemetry();
             notifyState();
             if (pollEnabled && ready) schedulePoll(pollIntervalSeconds * 1000L);
         } catch (JSONException e) {
@@ -1112,6 +1175,8 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         main.removeCallbacks(connectTimeout);
         main.removeCallbacks(pollTask);
         main.removeCallbacks(chargeTimeout);
+        main.removeCallbacks(mqttFreshnessTask);
+        if (mqttPublisher != null) { mqttPublisher.close(); mqttPublisher = null; }
         stopScan();
         closeGattOnly();
         if (apiServer != null) { apiServer.close(); apiServer = null; }
