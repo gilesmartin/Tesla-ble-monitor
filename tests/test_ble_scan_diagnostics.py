@@ -23,9 +23,10 @@ class BleScanDiagnosticsTest(unittest.TestCase):
 public final class BleScanDiagnosticsHarness {
     public static void main(String[] args) {
         BleScanDiagnostics d = new BleScanDiagnostics();
-        d.recordResult(true, true, false, false, false);
-        d.recordResult(false, false, true, true, true);
-        d.recordResult(false, false, true, false, false);
+        d.recordResult(true, true, false, false, false, true, false, false, false, false, false);
+        d.recordResult(true, false, false, false, false, false, false, true, false, false, false);
+        d.recordResult(true, false, false, false, false, false, false, false, false, true, false);
+        d.recordResult(false, false, true, true, false, false, false, false, false, false, true);
         System.out.print(d.summary());
     }
 }
@@ -42,9 +43,11 @@ public final class BleScanDiagnosticsHarness {
                 check=True, capture_output=True, text=True,
             )
         self.assertEqual(
-            "BLE scan diagnostics: result_callbacks=3 scan_record_name_present=1 "
-            "scan_record_name_missing=2 cached_name_checked=2 cached_name_present=1 "
-            "scan_record_exact_match=1 cached_name_exact_match=1",
+            "BLE scan diagnostics: result_callbacks=4 scan_record_name_present=3 "
+            "scan_record_name_missing=1 cached_name_checked=1 cached_name_present=1 "
+            "scan_record_exact_match=1 cached_name_exact_match=0 scan_record_vin_match=1 "
+            "cached_name_vin_match=0 scan_record_unknown_hash_suffix=1 "
+            "cached_name_unknown_hash_suffix=0 scan_record_tesla_prefix=1 cached_name_tesla_prefix=1",
             result.stdout,
         )
 

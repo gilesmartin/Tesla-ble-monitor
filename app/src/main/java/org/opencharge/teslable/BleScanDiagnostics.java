@@ -10,17 +10,32 @@ public final class BleScanDiagnostics {
     private int cachedNamePresent;
     private int scanRecordExactMatch;
     private int cachedNameExactMatch;
+    private int scanRecordVinMatch;
+    private int cachedNameVinMatch;
+    private int scanRecordUnknownHashSuffix;
+    private int cachedNameUnknownHashSuffix;
+    private int scanRecordTeslaPrefix;
+    private int cachedNameTeslaPrefix;
 
     public void recordResult(boolean recordNamePresent, boolean recordNameMatches,
-            boolean cachedNameWasChecked, boolean cachedNameIsPresent, boolean cachedNameMatches) {
+            boolean cachedNameWasChecked, boolean cachedNameIsPresent, boolean cachedNameMatches,
+            boolean recordNameMatchesVin, boolean cachedNameMatchesVin,
+            boolean recordNameHasUnknownHashSuffix, boolean cachedNameHasUnknownHashSuffix,
+            boolean recordNameHasTeslaPrefix, boolean cachedNameHasTeslaPrefix) {
         resultCallbacks = increment(resultCallbacks);
         if (recordNamePresent) scanRecordNamePresent = increment(scanRecordNamePresent);
         else scanRecordNameMissing = increment(scanRecordNameMissing);
         if (recordNamePresent && recordNameMatches) scanRecordExactMatch = increment(scanRecordExactMatch);
+        if (recordNamePresent && recordNameMatchesVin) scanRecordVinMatch = increment(scanRecordVinMatch);
+        if (recordNamePresent && recordNameHasUnknownHashSuffix) scanRecordUnknownHashSuffix = increment(scanRecordUnknownHashSuffix);
+        if (recordNamePresent && recordNameHasTeslaPrefix) scanRecordTeslaPrefix = increment(scanRecordTeslaPrefix);
         if (cachedNameWasChecked) {
             cachedNameChecked = increment(cachedNameChecked);
             if (cachedNameIsPresent) cachedNamePresent = increment(cachedNamePresent);
             if (cachedNameIsPresent && cachedNameMatches) cachedNameExactMatch = increment(cachedNameExactMatch);
+            if (cachedNameIsPresent && cachedNameMatchesVin) cachedNameVinMatch = increment(cachedNameVinMatch);
+            if (cachedNameIsPresent && cachedNameHasUnknownHashSuffix) cachedNameUnknownHashSuffix = increment(cachedNameUnknownHashSuffix);
+            if (cachedNameIsPresent && cachedNameHasTeslaPrefix) cachedNameTeslaPrefix = increment(cachedNameTeslaPrefix);
         }
     }
 
@@ -35,6 +50,12 @@ public final class BleScanDiagnostics {
                 + " cached_name_checked=" + cachedNameChecked
                 + " cached_name_present=" + cachedNamePresent
                 + " scan_record_exact_match=" + scanRecordExactMatch
-                + " cached_name_exact_match=" + cachedNameExactMatch;
+                + " cached_name_exact_match=" + cachedNameExactMatch
+                + " scan_record_vin_match=" + scanRecordVinMatch
+                + " cached_name_vin_match=" + cachedNameVinMatch
+                + " scan_record_unknown_hash_suffix=" + scanRecordUnknownHashSuffix
+                + " cached_name_unknown_hash_suffix=" + cachedNameUnknownHashSuffix
+                + " scan_record_tesla_prefix=" + scanRecordTeslaPrefix
+                + " cached_name_tesla_prefix=" + cachedNameTeslaPrefix;
     }
 }

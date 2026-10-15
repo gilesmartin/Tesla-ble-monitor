@@ -34,6 +34,11 @@ public final class TeslaBleAdvertisementMatcherHarness {
         check(!TeslaBleAdvertisementMatcher.matchesVin(expected + "C", "bad"), "invalid VIN length rejected");
         check(!TeslaBleAdvertisementMatcher.matchesVin(null, vin), "null name rejected");
         check(!TeslaBleAdvertisementMatcher.matchesVin(expected + "C", null), "null VIN rejected");
+        check(TeslaBleAdvertisementMatcher.hasUnknownHashSuffix(expected + "X", vin), "unknown suffix candidate detected");
+        check(!TeslaBleAdvertisementMatcher.hasUnknownHashSuffix(expected + "R", vin), "supported suffix not classified unknown");
+        check(!TeslaBleAdvertisementMatcher.hasUnknownHashSuffix("S0000000000000000X", vin), "wrong hash prefix rejected");
+        check(TeslaBleAdvertisementMatcher.hasTeslaPrefix("Tesla 000000"), "Tesla label classified");
+        check(!TeslaBleAdvertisementMatcher.hasTeslaPrefix("Other 000000"), "other label rejected");
         System.out.print("matcher cases passed");
     }
 }

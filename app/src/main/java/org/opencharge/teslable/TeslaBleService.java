@@ -548,9 +548,22 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             try { cachedName = device.getName(); } catch (SecurityException ignored) { }
         }
         boolean cachedNamePresent = cachedName != null && !cachedName.isEmpty();
+        boolean scanRecordVinMatch = TeslaBleAdvertisementMatcher.matchesVin(scanRecordName, currentVin);
+        boolean cachedNameVinMatch = TeslaBleAdvertisementMatcher.matchesVin(cachedName, currentVin);
+        boolean scanRecordUnknownHashSuffix = scanRecordNamePresent
+                && TeslaBleAdvertisementMatcher.hasUnknownHashSuffix(scanRecordName, currentVin);
+        boolean cachedNameUnknownHashSuffix = cachedNamePresent
+                && TeslaBleAdvertisementMatcher.hasUnknownHashSuffix(cachedName, currentVin);
+        boolean scanRecordTeslaPrefix = scanRecordNamePresent
+                && TeslaBleAdvertisementMatcher.hasTeslaPrefix(scanRecordName);
+        boolean cachedNameTeslaPrefix = cachedNamePresent
+                && TeslaBleAdvertisementMatcher.hasTeslaPrefix(cachedName);
         scanDiagnostics.recordResult(scanRecordNamePresent,
                 expectedAdvertisement.equals(scanRecordName), cachedNameChecked,
-                cachedNamePresent, expectedAdvertisement.equals(cachedName));
+                cachedNamePresent, expectedAdvertisement.equals(cachedName),
+                scanRecordVinMatch, cachedNameVinMatch,
+                scanRecordUnknownHashSuffix, cachedNameUnknownHashSuffix,
+                scanRecordTeslaPrefix, cachedNameTeslaPrefix);
 
         // Prefer the name in this advertisement; when Android omits it, use the cached device
         // name only if it independently matches the configured vehicle VIN.
@@ -563,6 +576,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         selectedDevice = device;
         selectedAddress = address;
         selectedVin = currentVin;
+        log(scanDiagnostics.summary());
         log("Matching Tesla BLE advertisement found");
         Listener callback = listener;
         if (callback != null) callback.onDeviceFound(name, address, result.getRssi());
