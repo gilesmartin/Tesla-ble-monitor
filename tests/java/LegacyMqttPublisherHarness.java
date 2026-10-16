@@ -1,6 +1,7 @@
 package org.opencharge.teslable;
 import java.util.*;
 public final class LegacyMqttPublisherHarness {
+ static final String TEST_VIN="5YJ3E1EA7JF000001";
  static void check(boolean value,String reason){if(!value)throw new AssertionError(reason);}
  static final class Wire implements MqttBridgePublisher.Transport{
   Listener listener;List<String> subscriptions=new ArrayList<>(),records=new ArrayList<>();boolean connected;
@@ -9,7 +10,7 @@ public final class LegacyMqttPublisherHarness {
   public void subscribe(String topic,int qos){subscriptions.add(topic);}
   public boolean isConnected(){return connected;}
   public void disconnect(){connected=false;}
-  void input(String suffix,String payload,boolean retained,boolean duplicate){listener.onMessage("tesla_ble/5YJ3E1EBXJF096057/"+suffix,payload,retained,duplicate);}
+  void input(String suffix,String payload,boolean retained,boolean duplicate){listener.onMessage("tesla_ble/"+TEST_VIN+"/"+suffix,payload,retained,duplicate);}
   boolean saw(String value){for(String record:records)if(record.contains(value))return true;return false;}
  }
  static final class Main implements LegacyMqttPublisher.Owner{
@@ -25,14 +26,20 @@ public final class LegacyMqttPublisherHarness {
   public void abortTimedOutCommand(){aborts++;ready=false;}
  }
  public static void main(String[] argv){
-  Main owner=new Main();Wire wire=new Wire();LegacyMqttPublisher publisher=new LegacyMqttPublisher("tcp://127.0.0.1:1883",true,"fixture-user","fixture-password","5YJ3E1EBXJF096057",wire,owner);
+  Main owner=new Main();Wire wire=new Wire();LegacyMqttPublisher publisher=new LegacyMqttPublisher("tcp://127.0.0.1:1883",true,"fixture-user","fixture-password",TEST_VIN,wire,owner);
   owner.run(publisher::start);
+  LegacyMqttDiscoveryCatalog.Definition modelX=null;
+  for(LegacyMqttDiscoveryCatalog.Definition d:LegacyMqttDiscoveryCatalog.create(TEST_VIN))if("autosecure-modelx".equals(d.getObjectId()))modelX=d;
+  check(modelX!=null&&!modelX.isSupported(),"Model-X control identity remains unavailable on Model 3");
   check(!wire.subscriptions.contains("tesla_ble/5YJ3E1EBXJF096057/#"),"no feedback wildcard");
   check(wire.records.size()>79,"discovery plus per-entity availability");
   switch(argv[0]){
    case "commands":
     wire.input("command","lock",false,false);check(owner.calls==0,"network callback cannot invoke native");owner.run(()->{});check(owner.calls==0&&wire.saw("controls_disabled"),"default gate");
     owner.controls=true;
+    int beforeModelSpecific=owner.calls;
+    wire.input("command","autosecure-modelx",false,false);owner.run(()->{});
+    check(owner.calls==beforeModelSpecific&&wire.saw("wrong_vehicle_model"),"Model-X-only button cannot actuate a Model 3");
     wire.input("command","unlock",true,false);wire.input("command","unlock",false,true);owner.run(()->{});check(owner.calls==0,"retained/duplicate actuation rejected");
     wire.input("command","lock",false,false);owner.run(()->{});check(owner.calls==1&&owner.op.equals("lock"),"valid command reaches single owner");
     wire.input("command","honk",false,false);owner.run(()->{});check(owner.calls==1&&wire.saw("busy"),"bounded serial intake");

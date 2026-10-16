@@ -9,6 +9,12 @@ class LegacyDiscoveryCatalogTests(unittest.TestCase):
    subprocess.run(['javac','-d',out,*map(str,sources)],check=True,capture_output=True,text=True)
    r=subprocess.run(['java','-cp',out,'org.opencharge.teslable.LegacyMqttDiscoveryCatalogHarness',vin],check=True,capture_output=True,text=True)
    return [json.loads(line) for line in r.stdout.splitlines()]
+ def render_topics(self,vin=VIN):
+  with tempfile.TemporaryDirectory() as out:
+   sources=[ROOT/'app/src/main/java/org/opencharge/teslable/LegacyMqttDiscoveryCatalog.java',ROOT/'tests/java/LegacyMqttDiscoveryTopicHarness.java']
+   subprocess.run(['javac','-d',out,*map(str,sources)],check=True,capture_output=True,text=True)
+   r=subprocess.run(['java','-cp',out,'org.opencharge.teslable.LegacyMqttDiscoveryTopicHarness',vin],check=True,capture_output=True,text=True)
+   return [line for line in r.stdout.splitlines() if line]
  def test_component_scoped_registry_identity_and_availability(self):
   actual=self.render();catalog={(d.get('device',{}).get('identifiers',[None])[0],d['unique_id']) for d in actual}
   registry=json.loads((ROOT/'docs/LEGACY_TEST_HA_MANIFEST.json').read_text())['entities']
@@ -23,6 +29,14 @@ class LegacyDiscoveryCatalogTests(unittest.TestCase):
    for a in d['availability']:self.assertTrue(a['topic'].startswith('tesla_ble/'+VIN+'/availability'))
   trackers=[d for d in actual if d.get('state_topic','').endswith('/device_tracker/presence_bc')]
   self.assertEqual(len(trackers),1)
+ def test_scope_matches_original_model_three_and_existing_ha_control(self):
+  fixture=json.loads((ROOT/'tests/fixtures/tesla_ble_mqtt_docker_m3_discovery_topics.json').read_text())
+  expected=set(fixture['discovery_topics'])
+  actual={topic.replace(VIN,'__VIN__') for topic in self.render_topics()}
+  self.assertEqual(fixture['vehicle_model'],'3')
+  self.assertEqual(fixture['ha_retained_controls'],['autosecure-modelx'])
+  self.assertEqual(len(expected),80)
+  self.assertEqual(actual,expected, f"unexpected topics={sorted(actual-expected)}; missing topics={sorted(expected-actual)}")
  def test_vin_replacement_and_original_state_units(self):
   other='5YJ3E1EBXJF000002';actual=self.render(other)
   self.assertNotIn(VIN,json.dumps(actual))
