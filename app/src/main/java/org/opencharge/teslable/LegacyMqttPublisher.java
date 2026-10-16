@@ -10,7 +10,10 @@ public final class LegacyMqttPublisher {
   long now();
   long freshnessMillis();
   boolean isReady();
+  boolean isNativeInitialized();
+  boolean hasExistingKey();
   boolean controlsEnabled();
+  void onKeyRegenerated();
   boolean execute(String id,String operation,String[] args);
   boolean read(String section);
   boolean setPolicy(Boolean polling,Integer intervalSeconds);
@@ -77,18 +80,25 @@ public final class LegacyMqttPublisher {
   if(parsed.confirmationNeeded()){result("","requires_local_confirmation",false);owner.diagnostic("key_management_requires_local_confirmation");return;}
   if(operation.equals("read_vehicle_state")){
    String command=args.get("command");
-   if(command.equals("info-bt-adapter")||command.equals("read-state-envcheck")){owner.diagnostic(command);result("","diagnostic_requested",false);return;}
-   String section=command.equals("body-controller-state")?"vcsec":command.substring("read-state-".length());
+   if(command.equals("info-bt-adapter")){owner.diagnostic(command);result("","diagnostic_requested",false);return;}
+   String section=command.equals("body-controller-state")?"vcsec":command.equals("read-state-envcheck")?"all":command.substring("read-state-".length());
    result("",owner.read(section)?"read_requested":"read_rejected",false);return;
   }
   boolean actuating=!(operation.equals("vehicle_command")&&"list-keys".equals(args.get("command")));
   if(duplicate&&actuating){result("","duplicate_actuation_rejected",false);return;}
   if(actuating&&!owner.controlsEnabled()){result("","controls_disabled",false);return;}
-  if(!owner.isReady()){result("","vehicle_not_ready",false);return;}
+  if(operation.equals("key_management")){
+   String action=args.get("action");
+   if(!Set.of("deploy-key","generate-keys").contains(action)){result("","unsupported_key_action",false);return;}
+   if(action.equals("deploy-key")&&!owner.hasExistingKey()){result("","no_existing_key",false);return;}
+   boolean keyReady=action.equals("generate-keys")?owner.isNativeInitialized():owner.isReady();
+   if(!keyReady){result("","vehicle_not_ready",false);return;}
+  } else if(!owner.isReady()){result("","vehicle_not_ready",false);return;}
   if(pendingId!=null){result("","busy",false);return;}
   String raw;String value=null;
   switch(operation){
    case "vehicle_command":raw=args.get("command");break;
+   case "key_management":raw=args.get("action");break;
    case "auto_seat_climate":raw="auto-seat-and-climate";value=args.get("value");break;
    case "set_charge_limit":raw="charging-set-limit";value=args.get("percent");break;
    case "set_charging_amps":raw="true".equals(args.get("override"))?"charging-set-amps-override":"charging-set-amps";value=args.get("amps");break;
@@ -108,7 +118,8 @@ public final class LegacyMqttPublisher {
   if(closed||id==null||!id.equals(pendingId))return;
   String operation=pendingOperation;pendingId=null;pendingOperation=null;
   result(id,acknowledged?"acknowledged":("rejected".equals(status)?"rejected":"failed"),acknowledged);
-  if(acknowledged&&owner.isReady())owner.read(readback(operation));
+  if(acknowledged&&"generate-keys".equals(operation)){owner.onKeyRegenerated();refreshAvailability();}
+  else if(acknowledged&&owner.isReady())owner.read(readback(operation));
  }
  private static String readback(String op){
   if(op.contains("climate")||op.contains("heater"))return "climate";
@@ -116,7 +127,7 @@ public final class LegacyMqttPublisher {
   if(op.contains("media"))return "media";
   if(op.contains("software"))return "software";
   if(op.equals("drive"))return "drive";
-  if(op.equals("wake")||op.equals("ping")||op.equals("list-keys"))return "vcsec";
+  if(op.equals("deploy-key")||op.equals("wake")||op.equals("ping")||op.equals("list-keys"))return "vcsec";
   return "closure";
  }
  public void onTelemetry(String section,Map<String,String> values){
@@ -142,6 +153,8 @@ public final class LegacyMqttPublisher {
   for(LegacyMqttDiscoveryCatalog.Definition d:definitions){
    boolean ready=d.isSupported()&&!d.requiresConfirmation();String suffix=d.getStateSuffix();
    if(suffix.startsWith("variables/")){ /* Persisted policy is independent of vehicle reachability. */ }
+   else if("deploy-key".equals(d.getObjectId()))ready=ready&&owner.isReady()&&owner.hasExistingKey();
+   else if("regenerate-keys".equals(d.getObjectId()))ready=ready&&owner.isNativeInitialized();
    else if(!suffix.isEmpty())ready=ready&&owner.isReady()&&fresh(suffix)&&topicValues.containsKey(suffix);
    else ready=ready&&owner.isReady();
    if(d.isActuating())ready=ready&&owner.controlsEnabled();

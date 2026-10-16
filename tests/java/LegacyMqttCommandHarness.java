@@ -9,7 +9,8 @@ public final class LegacyMqttCommandHarness {
   LegacyMqttCommand.Result polling=LegacyMqttCommand.parse("tesla_ble/"+vin+"/variables/polling","on",vin,true);
   if(!polling.accepted() || !polling.operation().equals("set_polling") || !polling.arguments().get("value").equals("on")) throw new AssertionError("retained idempotent config");
   LegacyMqttCommand.Result keys=LegacyMqttCommand.parse("tesla_ble/"+vin+"/config","deploy-key",vin,false);
-  if(!keys.accepted() || !keys.confirmationNeeded()) throw new AssertionError("dangerous key config must gate confirmation");
+  if(!keys.accepted() || keys.confirmationNeeded()) throw new AssertionError("key operations are explicit opt-in MQTT commands, not deployment hooks");
+  if(LegacyMqttCommand.parse("tesla_ble/"+vin+"/config","generate-keys",vin,true).accepted()) throw new AssertionError("retained key rotation accepted");
   String[] commands={"autosecure-modelx","charging-schedule-cancel","drive","flash-lights","frunk-open","honk","list-keys","lock","media-toggle-playback","ping","software-update-cancel","software-update-start","unlock","wake","body-controller-state","generate-keys","info-bt-adapter","read-state-all","read-state-envcheck","read-state-charge","read-state-climate","read-state-tyre","read-state-closure","read-state-drive","auto-seat-and-climate"};
   for(String cmd:commands){String topic=(cmd.startsWith("read-state")||cmd.equals("generate-keys")||cmd.equals("deploy-key")||cmd.equals("info-bt-adapter")||cmd.equals("body-controller-state"))?"config":(cmd.equals("auto-seat-and-climate")?cmd:"command"); if(!LegacyMqttCommand.parse("tesla_ble/"+vin+"/"+topic,cmd.equals("auto-seat-and-climate")?"on":cmd,vin,false).accepted()) throw new AssertionError("missed command "+cmd);}
   String root="tesla_ble/"+vin+"/";

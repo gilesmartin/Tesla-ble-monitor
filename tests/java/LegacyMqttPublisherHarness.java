@@ -14,11 +14,12 @@ public final class LegacyMqttPublisherHarness {
   boolean saw(String value){for(String record:records)if(record.contains(value))return true;return false;}
  }
  static final class Main implements LegacyMqttPublisher.Owner{
-  ArrayDeque<Runnable> work=new ArrayDeque<>();long time=1000;boolean ready=true,controls=false,draining;int calls,reads,policies,aborts,diagnostics;String id,op,section;String[] args;
+  ArrayDeque<Runnable> work=new ArrayDeque<>();long time=1000;boolean ready=true,nativeInitialized=true,keyPresent=true,controls=false,draining;int calls,reads,policies,aborts,diagnostics,keyRegenerations;String id,op,section;String[] args;
   public void post(Runnable r){work.add(r);}
   void run(Runnable r){post(r);while(!work.isEmpty()){draining=true;try{work.remove().run();}finally{draining=false;}}}
   public long now(){return time;}public long freshnessMillis(){return 90000;}
-  public boolean isReady(){return ready;}public boolean controlsEnabled(){return controls;}
+  public boolean isReady(){return ready;}public boolean isNativeInitialized(){return nativeInitialized;}public boolean hasExistingKey(){return keyPresent;}public boolean controlsEnabled(){return controls;}
+  public void onKeyRegenerated(){keyRegenerations++;keyPresent=true;}
   public boolean execute(String id,String op,String[] args){check(draining,"native owner affinity");calls++;this.id=id;this.op=op;this.args=args;return true;}
   public boolean read(String section){check(draining,"read owner affinity");reads++;this.section=section;return true;}
   public boolean setPolicy(Boolean enabled,Integer seconds){policies++;return true;}
@@ -63,9 +64,16 @@ public final class LegacyMqttPublisherHarness {
     break;
    case "policy":
     wire.input("variables/polling","off",true,true);wire.input("variables/polling_interval","720",true,true);owner.run(()->{});check(owner.policies==2&&owner.calls==0,"idempotent retained policy accepted");
-    wire.input("config","deploy-key",false,false);owner.run(()->{});check(owner.diagnostics==1&&owner.calls==0&&wire.saw("requires_local_confirmation"),"key preservation/confirmation boundary");
-    wire.input("variables/polling_interval","3601",false,false);wire.input("heater-seat-random","med",false,false);owner.run(()->{});check(owner.calls==0&&owner.policies==2,"invalid input has no effects");
-    wire.input("command","list-keys",false,false);owner.run(()->{});check(owner.calls==1&&owner.op.equals("list-keys"),"non-actuating key-list read allowed without controls");
+    wire.input("config","read-state-envcheck",false,false);owner.run(()->{});check(owner.reads==1&&owner.section.equals("all"),"envcheck refresh requests all supported state sections");
+    wire.input("config","deploy-key",false,false);owner.run(()->{});check(owner.calls==0&&wire.saw("controls_disabled"),"key deployment obeys explicit controls opt-in");
+    owner.controls=true;owner.ready=false;wire.input("config","generate-keys",false,false);owner.run(()->{});check(owner.calls==1&&owner.op.equals("generate-keys"),"explicit key regeneration works while disconnected with native owner initialized");
+    String keyId=owner.id;owner.run(()->publisher.onCommandResult(keyId,"success",true));check(owner.keyRegenerations==1&&owner.reads==1&&owner.keyPresent,"key regeneration refreshes local key state without vehicle readback");
+    owner.ready=true;owner.keyPresent=false;wire.input("config","deploy-key",false,false);owner.run(()->{});check(owner.calls==1&&wire.saw("no_existing_key"),"deployment refuses to create a replacement key");
+    owner.keyPresent=true;wire.input("config","deploy-key",false,false);owner.run(()->{});check(owner.calls==2&&owner.op.equals("deploy-key"),"deployment uses the existing key");
+    String deployId=owner.id;owner.run(()->publisher.onCommandResult(deployId,"success",true));check(owner.reads==2&&owner.section.equals("vcsec"),"deployment acknowledgement requests key-list readback");
+    wire.input("config","generate-keys",true,false);wire.input("config","generate-keys",false,true);owner.run(()->{});check(owner.calls==2&&wire.saw("rejected")&&wire.saw("duplicate_actuation_rejected"),"retained and duplicate key actions are rejected");
+    wire.input("variables/polling_interval","3601",false,false);wire.input("heater-seat-random","med",false,false);owner.run(()->{});check(owner.calls==2&&owner.policies==2,"invalid input has no effects");
+    wire.input("command","list-keys",false,false);owner.run(()->{});check(owner.calls==3&&owner.op.equals("list-keys"),"non-actuating key-list read allowed without controls");
     break;
    default:throw new AssertionError("unknown mode");
   }

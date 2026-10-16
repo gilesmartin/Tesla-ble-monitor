@@ -419,9 +419,21 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                     @Override public long now() { return android.os.SystemClock.elapsedRealtime(); }
                     @Override public long freshnessMillis() { return Math.max(90000L, pollIntervalSeconds * 3000L); }
                     @Override public boolean isReady() { return ready && nativeInitialized && expectedVin.equals(currentVin) && expectedVin.equals(nativeVin); }
+                    @Override public boolean isNativeInitialized() { return nativeInitialized && expectedVin.equals(currentVin) && expectedVin.equals(nativeVin); }
+                    @Override public boolean hasExistingKey() { return isNativeInitialized() && keyPresent; }
                     @Override public boolean controlsEnabled() { return settings.isLegacyControlsEnabled(); }
+                    @Override public void onKeyRegenerated() {
+                        if (!isNativeInitialized()) return;
+                        keyPresent = tesla.hasPrivateKey();
+                        authenticationState = keyPresent ? "new_key_generated_pending_vehicle_approval" : "key_generation_failed";
+                        log(keyPresent ? "Explicit MQTT key regeneration completed; deploy the new key from Home Assistant and approve it at the vehicle. App installation did not change the key." : "MQTT key regeneration reported success but no private key is present");
+                        notifyState();
+                    }
                     @Override public boolean execute(String id, String op, String[] args) {
+                        if (!isNativeInitialized()) return false;
+                        if ("generate-keys".equals(op)) return tesla.executeLegacy(id, op, args);
                         if (!isReady()) return false;
+                        if ("deploy-key".equals(op) && !keyPresent) return false;
                         return tesla.executeLegacy(id, op, args);
                     }
                     @Override public boolean read(String section) {

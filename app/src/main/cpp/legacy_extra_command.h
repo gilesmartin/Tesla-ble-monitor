@@ -4,7 +4,7 @@
 #include "legacy_command_dispatch.h"
 #include <optional>
 namespace TeslaAndroid {
-enum class ExtraKind { CHARGE_SCHEDULE, REMOTE_DRIVE, AUTO_SECURE, LIST_KEYS, PING, TONNEAU, AUTO_SEAT_CLIMATE };
+enum class ExtraKind { CHARGE_SCHEDULE, REMOTE_DRIVE, AUTO_SECURE, LIST_KEYS, PING, TONNEAU, AUTO_SEAT_CLIMATE, DEPLOY_KEY, REGENERATE_KEY };
 struct LegacyExtraPlan {ExtraKind kind;int value=0;bool enabled=true;};
 inline std::optional<LegacyExtraPlan> plan_legacy_extra(const std::string& operation,
  const std::vector<std::string>& args,const std::string& vin){
@@ -17,6 +17,8 @@ inline std::optional<LegacyExtraPlan> plan_legacy_extra(const std::string& opera
  if(operation=="drive"&&args.empty())return LegacyExtraPlan{ExtraKind::REMOTE_DRIVE};
  if(operation=="autosecure-modelx"&&args.empty()&&vin.size()==17&&vin[3]=='X')return LegacyExtraPlan{ExtraKind::AUTO_SECURE};
  if(operation=="list-keys"&&args.empty())return LegacyExtraPlan{ExtraKind::LIST_KEYS};
+ if(operation=="deploy-key"&&args.empty())return LegacyExtraPlan{ExtraKind::DEPLOY_KEY};
+ if(operation=="generate-keys"&&args.empty())return LegacyExtraPlan{ExtraKind::REGENERATE_KEY};
  if(operation=="ping"&&args.empty())return LegacyExtraPlan{ExtraKind::PING};
  if(operation=="tonneau"&&args.size()==1&&vin.size()==17&&vin.rfind("7G2C",0)==0){
   if(args[0]=="open")return LegacyExtraPlan{ExtraKind::TONNEAU,1};
@@ -40,6 +42,11 @@ inline VCSEC_ClosureMoveRequest tonneau_payload(const LegacyExtraPlan& plan){
 inline bool dispatch_legacy_extra(TeslaBLE::Vehicle& vehicle,const std::string& operation,
  const std::vector<std::string>& args,const std::string& vin,TeslaBLE::Command::OperationResultCallback callback){
  const auto plan=plan_legacy_extra(operation,args,vin);if(!plan)return false;
+ if(plan->kind==ExtraKind::REGENERATE_KEY){vehicle.regenerate_key(callback);return true;}
+ if(plan->kind==ExtraKind::DEPLOY_KEY){
+  if(!vehicle.is_connected()||!vehicle.has_private_key())return false;
+  vehicle.pair(Keys_Role_ROLE_OWNER,std::move(callback));return true;
+ }
  if(plan->kind==ExtraKind::CHARGE_SCHEDULE){
   const auto action=scheduled_charging_payload(*plan);
   vehicle.send_command_result(UniversalMessage_Domain_DOMAIN_INFOTAINMENT,"Legacy charging schedule",

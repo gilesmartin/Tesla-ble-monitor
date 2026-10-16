@@ -8,6 +8,8 @@ class LegacyJniContractTests(unittest.TestCase):
   self.assertIn('NativeTesla_executeLegacy',native)
   self.assertIn('dispatch_legacy_command(*vehicle',native)
   self.assertIn('onNativeCommandResult',native)
+  self.assertIn('op!="generate-keys"&&!vehicle->is_connected()',native)
+  self.assertIn('REGENERATE_KEY',(ROOT/'app/src/main/cpp/legacy_extra_command.h').read_text())
   self.assertIn('public boolean executeLegacy(',java)
   self.assertIn('Looper.myLooper() != android.os.Looper.getMainLooper()',java)
   self.assertIn('default void onCommandResult(String json)',java)

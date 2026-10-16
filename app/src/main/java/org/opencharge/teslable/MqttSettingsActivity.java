@@ -101,7 +101,7 @@ public final class MqttSettingsActivity extends Activity {
         legacyCompatibility.setChecked(store.isLegacyCompatibilityEnabled());
         body.addView(legacyCompatibility);
         legacyControls = new CheckBox(this);
-        legacyControls.setText("Allow validated legacy vehicle controls (requires a control-capable enrolled key; never auto-pairs or regenerates keys)");
+        legacyControls.setText("Allow validated legacy vehicle controls (opt-in; Deploy Key reuses the current key and requires vehicle approval; ReGenerate Keys changes it only when that HA action is explicitly sent. App installation never changes keys.)");
         legacyControls.setChecked(store.isLegacyControlsEnabled());
         body.addView(legacyControls);
         status = label("TLS certificate and hostname verification are enabled for ssl:// brokers. Publishing is off unless explicitly enabled above.", 13);

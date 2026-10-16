@@ -9,3 +9,6 @@ class LegacyExtraNativeContractTests(unittest.TestCase):
   self.assertIn('plan_legacy_extra',s)
   self.assertIn('CarServer_ScheduledChargingAction',s)
   self.assertIn('ROLE_', (ROOT/'app/src/main/cpp/native_bridge.cpp').read_text())
+  self.assertIn('vehicle.has_private_key()',s)
+  self.assertIn('vehicle.pair(Keys_Role_ROLE_OWNER',s)
+  self.assertIn('vehicle.regenerate_key(callback)',s)

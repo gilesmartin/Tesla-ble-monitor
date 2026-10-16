@@ -17,6 +17,7 @@ int main(){using namespace TeslaAndroid;std::string vin="5YJ3E1EBXJF096057";
  auto closure=tonneau_payload(*plan);check(closure.tonneau==VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_OPEN);check(closure.frontDriverDoor==VCSEC_ClosureMoveType_E_CLOSURE_MOVE_TYPE_NONE);
  check(plan_legacy_extra("auto-seat-and-climate",{},vin)->enabled);check(!plan_legacy_extra("auto-seat-and-climate",{"off"},vin)->enabled);
  for(auto op:{"drive","list-keys","ping"}){check(plan_legacy_extra(op,{},vin).has_value());check(!plan_legacy_extra(op,{"junk"},vin));}
- check(!plan_legacy_extra("generate-keys",{},vin));check(!plan_legacy_extra("deploy-key",{},vin));check(!plan_legacy_extra("software-update-start",{},vin));
- std::cout<<"PASS legacy extra command plans, schedule builder, model gating, closure isolation, bounds and local-confirmation-only keys\n";
+ check(plan_legacy_extra("generate-keys",{},vin).has_value());check(plan_legacy_extra("deploy-key",{},vin).has_value());
+ check(!plan_legacy_extra("generate-keys",{"junk"},vin));check(!plan_legacy_extra("deploy-key",{"junk"},vin));check(!plan_legacy_extra("software-update-start",{},vin));
+ std::cout<<"PASS legacy extra command plans, schedule builder, model gating, closure isolation, bounds and explicit key operations\n";
 }

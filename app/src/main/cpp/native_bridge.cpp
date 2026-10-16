@@ -260,9 +260,10 @@ Java_org_opencharge_teslable_NativeTesla_executeLegacyOnOwner(JNIEnv* env,jobjec
         callText("onNativeCommandResult", "{\"request_id\":\""+id+"\",\"status\":\""
             +status+"\",\"acknowledged\":"+(acknowledged?"true":"false")+"}");
     };
-    if(!vehicle||!vehicle->is_connected()){result("not_connected",false);return JNI_FALSE;}
+    if(!vehicle){result("unavailable",false);return JNI_FALSE;}
     if(vehicle->pending_command_count()>24){result("busy",false);return JNI_FALSE;}
     const std::string op=text(operation);
+    if(op!="generate-keys"&&!vehicle->is_connected()){result("not_connected",false);return JNI_FALSE;}
     const jsize count=env->GetArrayLength(arguments);
     if(count<0||count>1){result("rejected",false);return JNI_FALSE;}
     std::vector<std::string> args;

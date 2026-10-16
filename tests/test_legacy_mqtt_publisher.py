@@ -11,4 +11,4 @@ class LegacyMqttPublisherTests(unittest.TestCase):
    self.assertEqual(result.returncode,0,result.stdout+result.stderr)
  def test_commands_are_serialized_on_owner_with_replay_guards(self):self.run_mode('commands')
  def test_section_freshness_and_birth_fail_closed(self):self.run_mode('freshness')
- def test_policy_and_key_confirmation_do_not_actuate(self):self.run_mode('policy')
+ def test_policy_and_key_commands_are_explicit_and_gated(self):self.run_mode('policy')

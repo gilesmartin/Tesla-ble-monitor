@@ -2,9 +2,9 @@ import unittest
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 class ControllerEnrollmentTests(unittest.TestCase):
- def test_existing_key_role_enrollment_is_only_local_and_confirmed(self):
+ def test_manual_driver_enrollment_stays_local_and_mqtt_deploy_reuses_existing_key(self):
   j=ROOT/'app/src/main/java/org/opencharge/teslable'
-  ui=(j/'MainActivity.java').read_text();service=(j/'TeslaBleService.java').read_text();native=(ROOT/'app/src/main/cpp/native_bridge.cpp').read_text()
+  ui=(j/'MainActivity.java').read_text();service=(j/'TeslaBleService.java').read_text();native=(ROOT/'app/src/main/cpp/native_bridge.cpp').read_text();extra=(ROOT/'app/src/main/cpp/legacy_extra_command.h').read_text()
   self.assertIn('new android.app.AlertDialog.Builder(this)',ui)
   self.assertIn('Vehicle parked — request approval',ui)
   self.assertIn('requestControllerEnrollment(confirmedVin)',ui)
@@ -16,4 +16,6 @@ class ControllerEnrollmentTests(unittest.TestCase):
   self.assertIn(marker,native)
   body=native[native.index(marker):];body=body[:body.index('extern "C"',10)]
   self.assertLess(body.index('!vehicle->has_private_key()'),body.index('vehicle->pair(Keys_Role_ROLE_DRIVER'))
+  self.assertIn('vehicle.has_private_key()',extra)
+  self.assertIn('vehicle.pair(Keys_Role_ROLE_OWNER',extra)
   self.assertNotIn('regenerate_key',body)

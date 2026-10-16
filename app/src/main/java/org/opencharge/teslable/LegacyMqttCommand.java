@@ -30,7 +30,7 @@ public final class LegacyMqttCommand {
   if(key.equals("poll_state")){Integer n=integer(payload,0,86400);if(n==null)return no("invalid poll count");return ok("poll_state",args("count",n.toString()),false);}
   if(key.equals("config")){
    if(READS.contains(payload))return ok("read_vehicle_state",args("command",payload),false);
-   if(payload.equals("generate-keys")||payload.equals("deploy-key"))return ok("key_management",args("action",payload),true);
+   if(payload.equals("generate-keys")||payload.equals("deploy-key"))return ok("key_management",args("action",payload),false);
    return no("unknown config command");
   }
   if(key.equals("command")){if(COMMANDS.contains(payload))return ok("vehicle_command",args("command",payload),false);return no("unknown command");}
