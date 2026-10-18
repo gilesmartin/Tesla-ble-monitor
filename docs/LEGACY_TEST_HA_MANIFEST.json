@@ -1,0 +1,780 @@
+{
+  "ha_version": "2026.7.2",
+  "entities": [
+    {
+      "entity_id": "button.amby_s_3_controls_force_update_env",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_read-state-envcheck",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Force Update Env"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_force_update_charge",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_read-state-charge",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Force Update Charge"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_force_update_climate",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_read-state-climate",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Force Update Climate"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_force_update_tyre",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_read-state-tyre",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Force Update Tyre"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_force_update_closure",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_read-state-closure",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Force Update Closure"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_force_update_drive",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_read-state-drive",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Force Update Drive"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charger_voltage",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charger_voltage",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Charger Voltage"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charge_speed",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_speed",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Charge Speed"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_passenger_temp_setting",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_passenger_temp",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Passenger Temp Setting"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_door_passenger_front",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_door_open_pf",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Door Passenger Front"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_door_driver_rear",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_door_open_dr",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Door Driver Rear"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_door_passenger_rear",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_door_open_pr",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Door Passenger Rear"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_front_defroster",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_front_defrost",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Front Defroster"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_rear_defroster",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_rear_defrost",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Rear Defroster"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_wiper_heater",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_wiper_heater",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Wiper Heater"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_mirror_heater",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_mirror_heater",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Mirror Heater"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_presence_bc",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_presence_bc",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Presence BC"
+    },
+    {
+      "entity_id": "device_tracker.amby_s_3_controls_presence_bc",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_presence_bc",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": "integration",
+      "original_name": "Presence BC"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_presence",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_presence",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Presence"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_car_state_information",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_body-controller-state",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Car state information"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_info_bluetooth_adapter",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_info-bt-adapter",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Info Bluetooth Adapter"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_list_public_keys_enrolled_on_car",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_list-keys",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "List public keys enrolled on car"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_force_update_all",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_read-state",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Force Update All"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_deploy_key",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_deploy-key",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Deploy Key"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_regenerate_keys",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_regenerate-keys",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "ReGenerate Keys"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_set_climate_mode_to_auto",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_auto-seat-and-climate",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Set climate mode to auto"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_remote_start_car",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_drive",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Remote start car"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_flash_lights",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_flash-lights",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Flash lights"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_open_car_frunk",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_frunk-open",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Open car frunk"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_honk_horn",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_honk",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Honk horn"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_lock_car",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_lock",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Lock car"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_toggle_between_play_pause",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_media-toggle-playback",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Toggle between play/pause"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_unlock_car",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_unlock",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Unlock car"
+    },
+    {
+      "entity_id": "button.amby_s_3_controls_wake_up_car",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_wake",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Wake up car"
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_charger",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charger"
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_climate",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_climate",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Climate"
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_sentry_mode",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_sentry-mode",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Sentry Mode"
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_steering_wheel_heater",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_steering-wheel-heater",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Steering Wheel Heater"
+    },
+    {
+      "entity_id": "switch.amby_s_3_controls_state_polling",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_polling",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "State Polling"
+    },
+    {
+      "entity_id": "cover.amby_s_3_controls_charge_port",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge-port",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charge port"
+    },
+    {
+      "entity_id": "cover.amby_s_3_controls_trunk",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_trunk",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Trunk"
+    },
+    {
+      "entity_id": "cover.amby_s_3_controls_windows",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_windows",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Windows"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_charging_current",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging-set-amps",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charging Current"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_charging_current_single",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging-set-amps-override",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charging Current single"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_charging_limit",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging-set-limit",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charging Limit"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_climate_temp",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_climate-set-temp",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Climate Temp"
+    },
+    {
+      "entity_id": "number.amby_s_3_controls_polling_interval",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_polling_interval",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Polling Interval"
+    },
+    {
+      "entity_id": "select.amby_s_3_controls_heated_seat_front_left",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_heater-seat-front-left",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Heated Seat Front Left"
+    },
+    {
+      "entity_id": "select.amby_s_3_controls_heated_seat_front_right",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_heater-seat-front-right",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Heated Seat Front Right"
+    },
+    {
+      "entity_id": "select.amby_s_3_controls_heated_seat_rear_left",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_heater-seat-rear-left",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Heated Seat Rear Left"
+    },
+    {
+      "entity_id": "select.amby_s_3_controls_heated_seat_rear_right",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_heater-seat-rear-right",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Heated Seat Rear Right"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_battery_level",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_state",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Battery Level"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_battery_range",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_battery_range",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Battery Range"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charger_power",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charger_power",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charger Power"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charger_actual_current",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charger_actual_current",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charger Actual Current"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charge_energy_added",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_energy_added",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charge Energy Added"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charge_range_added",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_range_added",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charge Range Added"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_tyre_pressure_front_left",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_tpms_pressure_fl",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Tyre Pressure Front Left"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_tyre_pressure_front_right",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_tpms_pressure_fr",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Tyre Pressure Front Right"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_tyre_pressure_rear_left",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_tpms_pressure_rl",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Tyre Pressure Rear Left"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_tyre_pressure_rear_right",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_tpms_pressure_rr",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Tyre Pressure Rear Right"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_inside_temp",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_inside_temp",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Inside Temp"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_outside_temp",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_outside_temp",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Outside Temp"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charge_cable",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charge_cable",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charge Cable"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_charging_state",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging_state",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charging State"
+    },
+    {
+      "entity_id": "sensor.amby_s_3_controls_odometer",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_odometer",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Odometer"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_battery_heater",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_battery_heater_on",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Battery Heater"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_front_trunk",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_frunk_open",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Front Trunk"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_window_driver_front",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_window_open_df",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Window Driver Front"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_window_passenger_front",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_window_open_pf",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Window Passenger Front"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_window_driver_rear",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_window_open_dr",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Window Driver Rear"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_window_passenger_rear",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_window_open_pr",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Window Passenger Rear"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_door_driver_front",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_door_open_df",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Door Driver Front"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_door_lock",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_door_lock",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Door Lock"
+    },
+    {
+      "entity_id": "binary_sensor.amby_s_3_controls_awake",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_awake",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Awake"
+    },
+    {
+      "entity_id": "button.vehicle_amby_s_3_controls_close_falcon_wing_doors_and_lock_vehicle",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_autosecure-modelx",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Close falcon-wing doors and lock vehicle"
+    },
+    {
+      "entity_id": "button.vehicle_amby_s_3_controls_cancel_scheduled_charge_start",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_charging-schedule-cancel",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Cancel scheduled charge start"
+    },
+    {
+      "entity_id": "button.vehicle_amby_s_3_controls_ping_car",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_ping",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Ping car"
+    },
+    {
+      "entity_id": "button.vehicle_amby_s_3_controls_cancel_pending_software_update",
+      "unique_id": "tesla_ble_5YJ3E1EA7JF000001_software-update-cancel",
+      "platform": "mqtt",
+      "device_id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Cancel pending software update"
+    },
+    {
+      "entity_id": "sensor.tesla_ble_monitor_battery",
+      "unique_id": "345afc1df40f4a4c8d71a325fb6a225d_battery_percent",
+      "platform": "mqtt",
+      "device_id": "60291add6dce0cd93c15d42a067895c6",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Battery"
+    },
+    {
+      "entity_id": "sensor.tesla_ble_monitor_usable_battery",
+      "unique_id": "345afc1df40f4a4c8d71a325fb6a225d_usable_battery_percent",
+      "platform": "mqtt",
+      "device_id": "60291add6dce0cd93c15d42a067895c6",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Usable battery"
+    },
+    {
+      "entity_id": "sensor.tesla_ble_monitor_estimated_range",
+      "unique_id": "345afc1df40f4a4c8d71a325fb6a225d_range_km",
+      "platform": "mqtt",
+      "device_id": "60291add6dce0cd93c15d42a067895c6",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Estimated range"
+    },
+    {
+      "entity_id": "binary_sensor.tesla_ble_monitor_charging",
+      "unique_id": "345afc1df40f4a4c8d71a325fb6a225d_charging",
+      "platform": "mqtt",
+      "device_id": "60291add6dce0cd93c15d42a067895c6",
+      "config_entry_id": "01JARJ9GXN9DD9TGJSNSQJ0ZMA",
+      "disabled_by": null,
+      "original_name": "Charging"
+    }
+  ],
+  "devices": [
+    {
+      "id": "3d54f772fe833d03d2a7b7a90a359e74",
+      "identifiers": [
+        [
+          "mqtt",
+          "tesla_ble_5YJ3E1EA7JF000001"
+        ]
+      ],
+      "manufacturer": "tesla-local-control",
+      "model": "Tesla_BLE",
+      "name": "Tesla_BLE_5YJ3E1EA7JF000001",
+      "name_by_user": "Amby's 3 Controls"
+    },
+    {
+      "id": "60291add6dce0cd93c15d42a067895c6",
+      "identifiers": [
+        [
+          "mqtt",
+          "345afc1df40f4a4c8d71a325fb6a225d"
+        ]
+      ],
+      "manufacturer": "Opencharge",
+      "model": "BLE telemetry bridge",
+      "name": "Tesla BLE Monitor",
+      "name_by_user": null
+    }
+  ]
+}
