@@ -2,38 +2,84 @@ package org.opencharge.teslable;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import java.util.Locale;
 
-/** Entry point for ADB shell only; no intent extras reach the exported normal GUI. */
+/** Shell-only dispatcher protected by android.permission.DUMP in the manifest. */
 public final class AdbCommandActivity extends Activity {
+    private static final String TAG = "TeslaBLE";
+
     @Override protected void onCreate(Bundle state) {
         super.onCreate(state);
-        String cmd = getIntent().getStringExtra("cmd");
-        if (cmd == null) { Log.e("TeslaBLE", "Missing cmd extra"); finish(); return; }
-        cmd = cmd.trim().toLowerCase(Locale.US);
-        switch (cmd) {
-            case "scan": case "connect": case "pair": case "read-charge":
-            case "status": case "disconnect": case "storage-test": break;
-            default: Log.e("TeslaBLE", "Unsupported ADB command: " + cmd); finish(); return;
-        }
-        String vin = getIntent().getStringExtra("vin");
+        process(getIntent());
+        finish();
+    }
+
+    @Override protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        process(intent);
+        finish();
+    }
+
+    private void process(Intent source) {
+        if (source == null) { Log.e(TAG, "ADB command intent missing"); return; }
+        String raw = source.getStringExtra("cmd");
+        if (raw == null) { Log.e(TAG, "ADB command name missing"); return; }
+        String command = raw.trim().toLowerCase(Locale.US);
+        if (!supported(command)) { Log.e(TAG, "Unsupported ADB command"); return; }
+
+        Intent service = new Intent(this, TeslaBleService.class);
+        service.setAction(TeslaBleService.ACTION_COMMAND);
+        service.putExtra(TeslaBleService.EXTRA_COMMAND, command);
+        String vin = source.getStringExtra(TeslaBleService.EXTRA_VIN);
         if (vin != null) {
             vin = vin.trim().toUpperCase(Locale.US);
             if (!vin.matches("[A-HJ-NPR-Z0-9]{17}")) {
-                Log.e("TeslaBLE", "Invalid VIN argument"); finish(); return;
+                Log.e(TAG, "Invalid VIN argument; command rejected");
+                return;
             }
+            service.putExtra(TeslaBleService.EXTRA_VIN, vin);
         }
-        SharedPreferences.Editor e = getSharedPreferences("tesla_adb_commands", MODE_PRIVATE)
-            .edit().putString("cmd", cmd);
-        if (vin == null) e.remove("vin"); else e.putString("vin", vin);
-        if (!e.commit()) { Log.e("TeslaBLE", "Could not persist ADB command"); finish(); return; }
-        Log.i("TeslaBLE", "ADB command accepted: " + cmd);
-        Intent gui = new Intent(this, MainActivity.class);
-        gui.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        startActivity(gui);
-        finish();
+        if ("set-api-token".equals(command)) {
+            String token = source.getStringExtra(TeslaBleService.EXTRA_TOKEN);
+            if (token == null) token = source.getStringExtra("api_token");
+            if (token == null) {
+                Log.e(TAG, "API token argument missing; token value suppressed");
+                return;
+            }
+            service.putExtra(TeslaBleService.EXTRA_TOKEN, token);
+        }
+        if ("poll-interval".equals(command)) {
+            int seconds = source.getIntExtra(TeslaBleService.EXTRA_INTERVAL_SECONDS, Integer.MIN_VALUE);
+            if (seconds == Integer.MIN_VALUE) {
+                String value = source.getStringExtra(TeslaBleService.EXTRA_INTERVAL_SECONDS);
+                try { seconds = Integer.parseInt(value); } catch (Exception ignored) { seconds = -1; }
+            }
+            if (seconds < 15 || seconds > 3600) {
+                Log.e(TAG, "Polling interval rejected; valid range is 15..3600 seconds");
+                return;
+            }
+            service.putExtra(TeslaBleService.EXTRA_INTERVAL_SECONDS, seconds);
+        }
+        try {
+            if (Build.VERSION.SDK_INT >= 26) startForegroundService(service);
+            else startService(service);
+            Log.i(TAG, "ADB command accepted: " + command);
+        } catch (RuntimeException e) {
+            Log.e(TAG, "Could not dispatch ADB command: " + command);
+        }
+    }
+
+    private static boolean supported(String command) {
+        switch (command) {
+            case "scan": case "connect": case "disconnect": case "status":
+            case "read-charge": case "poll-on": case "poll-off": case "poll-interval":
+            case "storage-test": case "stop": case "pair": case "set-api-token":
+                return true;
+            default: return false;
+        }
     }
 }

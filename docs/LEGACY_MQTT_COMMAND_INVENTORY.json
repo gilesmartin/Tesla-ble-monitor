@@ -1,0 +1,63 @@
+{
+  "upstream": "tesla-ble-mqtt-reference",
+  "revision": "69e3b2b20bbe42b167a30c95bd6d4beee2fb7612",
+  "source": [
+    "app/mqtt-listen.sh",
+    "app/tesla-commands.sh"
+  ],
+  "coverage": {
+    "status": "PARTIAL_GRAMMAR_AUDIT",
+    "verified_upstream_revision": "69e3b2b20bbe42b167a30c95bd6d4beee2fb7612",
+    "validated_topics": [
+      "command",
+      "config",
+      "poll_state",
+      "variables/polling",
+      "variables/polling_interval",
+      "charging",
+      "climate",
+      "sentry-mode",
+      "steering-wheel-heater",
+      "charge-port",
+      "trunk",
+      "windows",
+      "tonneau",
+      "charging-set-limit",
+      "charging-set-amps",
+      "charging-set-amps-override",
+      "climate-set-temp",
+      "charging-schedule",
+      "auto-seat-and-climate",
+      "four heater-seat topics",
+      "media-set-volume"
+    ],
+    "golden_catalog": "not generated; see GOLDEN_LEGACY_MQTT_DISCOVERY.json provenance"
+  },
+  "verified_target_runtime_limits": {
+    "charging_amps": [
+      0,
+      32
+    ],
+    "temperature_celsius": [
+      15,
+      28
+    ],
+    "polling_interval_seconds": [
+      30,
+      3600
+    ],
+    "poll_state_counter": [
+      0,
+      86400
+    ],
+    "media_volume_level": [
+      0,
+      10
+    ],
+    "charging_limit_percent": [
+      50,
+      100
+    ]
+  },
+  "runtime_limit_note": "Charging amps32 is the actual target legacy discovery maximum; canonical upstream template defaults48 and permits a configured maximum. Multi-vehicle limits require parameterization rather than silently using this target profile."
+}

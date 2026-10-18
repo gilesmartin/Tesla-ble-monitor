@@ -18,6 +18,13 @@ jobs:
           packages: 'platform-tools'
       - name: Android SDK and NDK
         run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0' 'cmake;3.22.1' 'ndk;28.2.13676358'
+      - name: Run source and loopback protocol tests
+        run: python3 -m unittest discover -s tests -v
+      - name: Compile pinned native protocol fixtures and execute them offline
+        run: |
+          cmake -S tests/native -B "$RUNNER_TEMP/legacy-native-tests" -DCMAKE_BUILD_TYPE=Release
+          cmake --build "$RUNNER_TEMP/legacy-native-tests" -j2
+          ctest --test-dir "$RUNNER_TEMP/legacy-native-tests" --output-on-failure
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
@@ -35,7 +42,7 @@ jobs:
           TESLA_SIGNING_PASSWORD: ${{ secrets.TESLA_SIGNING_PASSWORD }}
         run: |
           test -n "$TESLA_SIGNING_PASSWORD" || exit 1
-          gradle --no-daemon :app:assembleDebug
+          gradle --no-daemon :app:lintDebug :app:assembleDebug
       - uses: actions/upload-artifact@v4
         with:
           name: tesla-ble-monitor-debug-apk

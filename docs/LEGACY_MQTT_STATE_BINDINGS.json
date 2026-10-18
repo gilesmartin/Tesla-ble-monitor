@@ -1,0 +1,329 @@
+{
+  "upstream_revision": "69e3b2b20bbe42b167a30c95bd6d4beee2fb7612",
+  "source": "app/read-state.sh",
+  "bindings": [
+    {
+      "section": "charge",
+      "native_field": "battery_level",
+      "topic_suffix": "sensor/charge_state",
+      "transform": "number",
+      "upstream_field": "chargeState.batteryLevel"
+    },
+    {
+      "section": "charge",
+      "native_field": "battery_range",
+      "topic_suffix": "sensor/battery_range",
+      "transform": "number",
+      "upstream_field": "chargeState.batteryRange"
+    },
+    {
+      "section": "charge",
+      "native_field": "charger_power",
+      "topic_suffix": "sensor/charger_power",
+      "transform": "number",
+      "upstream_field": "chargeState.chargerPower"
+    },
+    {
+      "section": "charge",
+      "native_field": "charger_actual_current",
+      "topic_suffix": "sensor/charger_actual_current",
+      "transform": "number",
+      "upstream_field": "chargeState.chargerActualCurrent"
+    },
+    {
+      "section": "charge",
+      "native_field": "charger_voltage",
+      "topic_suffix": "sensor/charger_voltage",
+      "transform": "number",
+      "upstream_field": "chargeState.chargerVoltage"
+    },
+    {
+      "section": "charge",
+      "native_field": "charge_energy_added",
+      "topic_suffix": "sensor/charge_energy_added",
+      "transform": "number",
+      "upstream_field": "chargeState.chargeEnergyAdded"
+    },
+    {
+      "section": "charge",
+      "native_field": "charge_miles_added_rated",
+      "topic_suffix": "sensor/charge_range_added",
+      "transform": "number",
+      "upstream_field": "chargeState.chargeMilesAddedRated"
+    },
+    {
+      "section": "charge",
+      "native_field": "charge_rate_mph",
+      "topic_suffix": "sensor/charge_speed",
+      "transform": "number",
+      "upstream_field": "chargeState.chargeRateMph"
+    },
+    {
+      "section": "charge",
+      "native_field": "conn_charge_cable",
+      "topic_suffix": "sensor/charge_cable",
+      "transform": "cable",
+      "upstream_field": "chargeState.connChargeCable"
+    },
+    {
+      "section": "charge",
+      "native_field": "charging_state",
+      "topic_suffix": "sensor/charging_state",
+      "transform": "charging",
+      "upstream_field": "chargeState.chargingState"
+    },
+    {
+      "section": "charge",
+      "native_field": "charge_enable_request",
+      "topic_suffix": "switch/charge_enable_request",
+      "transform": "boolean",
+      "upstream_field": "chargeState.chargeEnableRequest"
+    },
+    {
+      "section": "charge",
+      "native_field": "charge_port_door_open",
+      "topic_suffix": "cover/charge_port_door_open",
+      "transform": "boolean",
+      "upstream_field": "chargeState.chargePortDoorOpen"
+    },
+    {
+      "section": "charge",
+      "native_field": "charge_current_request",
+      "topic_suffix": "number/charge_current_request",
+      "transform": "number",
+      "upstream_field": "chargeState.chargeCurrentRequest"
+    },
+    {
+      "section": "charge",
+      "native_field": "charge_limit_soc",
+      "topic_suffix": "number/charge_limit_soc",
+      "transform": "number",
+      "upstream_field": "chargeState.chargeLimitSoc"
+    },
+    {
+      "section": "climate",
+      "native_field": "inside_temp_celsius",
+      "topic_suffix": "sensor/inside_temp",
+      "transform": "number",
+      "upstream_field": "climateState.insideTempCelsius"
+    },
+    {
+      "section": "climate",
+      "native_field": "outside_temp_celsius",
+      "topic_suffix": "sensor/outside_temp",
+      "transform": "number",
+      "upstream_field": "climateState.outsideTempCelsius"
+    },
+    {
+      "section": "climate",
+      "native_field": "passenger_temp_setting",
+      "topic_suffix": "sensor/passenger_temp",
+      "transform": "number",
+      "upstream_field": "climateState.passengerTempSetting"
+    },
+    {
+      "section": "climate",
+      "native_field": "driver_temp_setting",
+      "topic_suffix": "number/driver_temp_setting",
+      "transform": "number",
+      "upstream_field": "climateState.driverTempSetting"
+    },
+    {
+      "section": "climate",
+      "native_field": "is_climate_on",
+      "topic_suffix": "switch/is_climate_on",
+      "transform": "boolean",
+      "upstream_field": "climateState.isClimateOn"
+    },
+    {
+      "section": "climate",
+      "native_field": "steering_wheel_heater",
+      "topic_suffix": "switch/steering_wheel_heater",
+      "transform": "boolean",
+      "upstream_field": "climateState.steeringWheelHeater"
+    },
+    {
+      "section": "climate",
+      "native_field": "battery_heater",
+      "topic_suffix": "binary_sensor/battery_heater_on",
+      "transform": "boolean",
+      "upstream_field": "climateState.batteryHeater"
+    },
+    {
+      "section": "climate",
+      "native_field": "is_front_defroster_on",
+      "topic_suffix": "binary_sensor/front_defrost",
+      "transform": "boolean",
+      "upstream_field": "climateState.isFrontDefrosterOn"
+    },
+    {
+      "section": "climate",
+      "native_field": "is_rear_defroster_on",
+      "topic_suffix": "binary_sensor/rear_defrost",
+      "transform": "boolean",
+      "upstream_field": "climateState.isRearDefrosterOn"
+    },
+    {
+      "section": "climate",
+      "native_field": "wiper_blade_heater",
+      "topic_suffix": "binary_sensor/wiper_heater",
+      "transform": "boolean",
+      "upstream_field": "climateState.wiperBladeHeater"
+    },
+    {
+      "section": "climate",
+      "native_field": "side_mirror_heaters",
+      "topic_suffix": "binary_sensor/mirror_heater",
+      "transform": "boolean",
+      "upstream_field": "climateState.sideMirrorHeaters"
+    },
+    {
+      "section": "climate",
+      "native_field": "seat_heater_left",
+      "topic_suffix": "select/seat_heater_left",
+      "transform": "seat",
+      "upstream_field": "climateState.seatHeaterLeft"
+    },
+    {
+      "section": "climate",
+      "native_field": "seat_heater_right",
+      "topic_suffix": "select/seat_heater_right",
+      "transform": "seat",
+      "upstream_field": "climateState.seatHeaterRight"
+    },
+    {
+      "section": "climate",
+      "native_field": "seat_heater_rear_left",
+      "topic_suffix": "select/seat_heater_rear_left",
+      "transform": "seat",
+      "upstream_field": "climateState.seatHeaterRearLeft"
+    },
+    {
+      "section": "climate",
+      "native_field": "seat_heater_rear_right",
+      "topic_suffix": "select/seat_heater_rear_right",
+      "transform": "seat",
+      "upstream_field": "climateState.seatHeaterRearRight"
+    },
+    {
+      "section": "tyre",
+      "native_field": "tpms_pressure_fl",
+      "topic_suffix": "sensor/tpms_pressure_fl",
+      "transform": "number",
+      "upstream_field": "tirePressureState.tpmsPressureFl"
+    },
+    {
+      "section": "tyre",
+      "native_field": "tpms_pressure_fr",
+      "topic_suffix": "sensor/tpms_pressure_fr",
+      "transform": "number",
+      "upstream_field": "tirePressureState.tpmsPressureFr"
+    },
+    {
+      "section": "tyre",
+      "native_field": "tpms_pressure_rl",
+      "topic_suffix": "sensor/tpms_pressure_rl",
+      "transform": "number",
+      "upstream_field": "tirePressureState.tpmsPressureRl"
+    },
+    {
+      "section": "tyre",
+      "native_field": "tpms_pressure_rr",
+      "topic_suffix": "sensor/tpms_pressure_rr",
+      "transform": "number",
+      "upstream_field": "tirePressureState.tpmsPressureRr"
+    },
+    {
+      "section": "closure",
+      "native_field": "sentry_mode",
+      "topic_suffix": "switch/sentry_mode",
+      "transform": "boolean",
+      "upstream_field": "closuresState.sentryModeState"
+    },
+    {
+      "section": "closure",
+      "native_field": "door_open_trunk_rear",
+      "topic_suffix": "cover/rear_trunk",
+      "transform": "boolean",
+      "upstream_field": "closuresState.doorOpenTrunkRear"
+    },
+    {
+      "section": "closure",
+      "native_field": "door_open_trunk_front",
+      "topic_suffix": "binary_sensor/frunk_open",
+      "transform": "boolean",
+      "upstream_field": "closuresState.doorOpenTrunkFront"
+    },
+    {
+      "section": "closure",
+      "native_field": "window_open_driver_front",
+      "topic_suffix": "binary_sensor/window_open_driver_front",
+      "transform": "boolean",
+      "upstream_field": "closuresState.windowOpenDriverFront"
+    },
+    {
+      "section": "closure",
+      "native_field": "window_open_passenger_front",
+      "topic_suffix": "binary_sensor/window_open_pass_front",
+      "transform": "boolean",
+      "upstream_field": "closuresState.windowOpenPassengerFront"
+    },
+    {
+      "section": "closure",
+      "native_field": "window_open_driver_rear",
+      "topic_suffix": "binary_sensor/window_open_driver_rear",
+      "transform": "boolean",
+      "upstream_field": "closuresState.windowOpenDriverRear"
+    },
+    {
+      "section": "closure",
+      "native_field": "window_open_passenger_rear",
+      "topic_suffix": "binary_sensor/window_open_pass_rear",
+      "transform": "boolean",
+      "upstream_field": "closuresState.windowOpenPassengerRear"
+    },
+    {
+      "section": "closure",
+      "native_field": "door_open_driver_front",
+      "topic_suffix": "binary_sensor/door_open_driver_front",
+      "transform": "boolean",
+      "upstream_field": "closuresState.doorOpenDriverFront"
+    },
+    {
+      "section": "closure",
+      "native_field": "door_open_passenger_front",
+      "topic_suffix": "binary_sensor/door_open_pass_front",
+      "transform": "boolean",
+      "upstream_field": "closuresState.doorOpenPassengerFront"
+    },
+    {
+      "section": "closure",
+      "native_field": "door_open_driver_rear",
+      "topic_suffix": "binary_sensor/door_open_driver_rear",
+      "transform": "boolean",
+      "upstream_field": "closuresState.doorOpenDriverRear"
+    },
+    {
+      "section": "closure",
+      "native_field": "door_open_passenger_rear",
+      "topic_suffix": "binary_sensor/door_open_pass_rear",
+      "transform": "boolean",
+      "upstream_field": "closuresState.doorOpenPassengerRear"
+    },
+    {
+      "section": "closure",
+      "native_field": "locked",
+      "topic_suffix": "binary_sensor/door_lock",
+      "transform": "boolean",
+      "upstream_field": "closuresState.locked"
+    },
+    {
+      "section": "drive",
+      "native_field": "odometer_in_hundredths_of_a_mile",
+      "topic_suffix": "sensor/odometer",
+      "transform": "odometer",
+      "upstream_field": "driveState.odometerInHundredthsOfAMile"
+    }
+  ],
+  "unit_policy": "Protocol/native scalar units remain unchanged; legacy HA expects miles, mph, bar and Celsius. Odometer deliberately matches upstream whole-mile truncation. No optimistic state."
+}

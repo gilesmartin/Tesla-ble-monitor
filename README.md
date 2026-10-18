@@ -1,59 +1,47 @@
-# Tesla BLE Monitor (Android, test prototype)
+# Tesla BLE Controller
 
-**Status:** Source prototype, **not yet successfully compiled or tested on a device**. It uses real Tesla BLE rather than mock telemetry and does not require root. The external C++ protocol library is built by CMake when Gradle builds the application. A GitHub Actions workflow is included to produce an APK.
+Android package: `org.opencharge.teslable` (min SDK 26, target SDK 35). The controller is the single owner of Tesla BLE/GATT and the native Tesla protocol client; DiPlay should consume its telemetry rather than implement another BLE stack.
 
-## Capabilities in this first build
+## Current implementation
 
-- Android 8.0+ with BLE; BLE scan/connection permissions requested at runtime for Android 12+
-- VIN-based matching of Tesla BLE advertisement (`S` + SHA-1(VIN)[0:8] hex + `C`)
-- GATT connection, CCCD notification subscription, write-with-response fragmentation, asynchronous queue
-- Native Tesla protocol engine: `yoziru/tesla-ble` via JNI (session handshakes, Tesla key pairing, protobuf decoding)
-- **Vehicle Monitor** key enrollment (read-only role), with physical Tesla key-card confirmation
-- Explicit, manual VCSEC status + charge-state requests while vehicle is awake
-- Battery percentage, usable battery percentage, battery range / estimated range (converted from miles to kilometres), and charging state
-- Vehicle-specific application key material and session state encrypted using Android Keystore AES-256-GCM
-- No remote API, no wake button, no CAN, no background service, no simulated data
+- VIN-derived BLE advertisement matching and asynchronous GATT transport.
+- Enrolled Tesla monitor key remains in the controller's existing encrypted storage. Do not invoke `pair` or re-enrollment as part of routine telemetry work.
+- Foreground connected-device service keeps operating after the UI closes. A process restart resumes only a previously requested connection.
+- A saved connection request is restored after `BOOT_COMPLETED` for the active Android user. Boot restore is gated on a valid saved VIN and `desired_connection=true`, resets the bounded reconnect counter, and performs a passive scan before connecting. It does not use a remembered Bluetooth address. A real cold-power-cycle test remains pending.
+- Reconnect attempts are bounded (up to 8, with backoff); the persisted desire is cleared after exhaustion. A later explicit Connect starts a new attempt window.
+- A one-shot ChargeState read uses the native `NO_WAKE_SKIP`/`NO_WAKE_FAIL` policy. It sends no explicit wake command. Periodic polling is opt-in, defaults off, and uses the configured 15–3600 second interval.
+- Authenticated telemetry is persisted for last-known display; the API marks it stale and nulls the top-level live fields after its freshness window.
+- Authenticated, read-only loopback HTTP interface: see [`docs/LOCAL_API.md`](docs/LOCAL_API.md). There is not currently an exported cross-app bound service; DiPlay integration must preserve the API's security boundary or add a permission-controlled IPC path after signer compatibility is checked.
 
-## Build an installable APK (GitHub Actions)
+## Safe operation
 
-1. Upload all the files in this directory into a GitHub repository (preserve `.github/workflows/android-apk.yml`).
-2. Push the repository's `main` branch or open **Actions → Build Android test APK → Run workflow**.
-3. Download the **tesla-ble-monitor-debug-apk** artifact from the completed workflow run. Unzip it to find `app-debug.apk`.
-4. Install with `adb install -r app-debug.apk` or transfer the APK directly to the Android device.
+- Perform vehicle-facing BLE tests only when the Model 3 is parked and the test is safe. A BLE session is not a wake command, but it does establish a vehicle connection.
+- Do not pair, enroll, delete, or replace the existing Tesla key for telemetry testing.
+- Do not enable continuous polling unless the integration requires it and the polling interval is deliberately selected. Do not enable remote wake or inhibit vehicle sleep.
+- The Screenmate loses power during Tesla deep sleep. No app, BLE service, or remote wake operation can run while it is unpowered.
+- Preserve VirtualAP, cellular routing, Tailscale, root ADB, TCP/5555, and the existing boot helper; this controller does not manage those components.
 
-**The build fetches the protocol-engine source and native dependencies from GitHub, so network access is required.** Native compilation can take several minutes. The Android SDK 35 and NDK 28 will be installed in the GitHub Actions runner.
+## ADB command entry point
 
-Local Android Studio alternative: Open this folder in Android Studio (JDK 17, Gradle 8.9, Android SDK 35, NDK 28.2.13676358, CMake 3.22.1). Build → Build APK(s). A Gradle wrapper binary isn't bundled; use an installed Gradle 8.9 or generate a wrapper (`gradle wrapper --gradle-version 8.9`).
+The no-UI command activity is protected by `android.permission.DUMP` and is intended for `adb shell`. Use the active driver profile (currently Android user 10) and the hostname supplied by the handoff:
 
-## First test (in a parked, awake Model 3)
+```sh
+# Replace with the authorized Android device hostname from the handoff.
+ANDROID_ADB_HOST="your-android-device-hostname"
+adb connect "${ANDROID_ADB_HOST}:5555"
+adb -s "${ANDROID_ADB_HOST}:5555" shell am start --user 10 \
+  -n org.opencharge.teslable/.AdbCommandActivity --es cmd status
+```
 
-1. Enable Bluetooth and install the app. Grant the requested permissions.
-2. Enter the full 17-character VIN. Tap **Scan** while within BLE range. Verify the expected BLE name is found.
-3. Select your Tesla, then tap **Connect**. The status should become **Tesla BLE transport ready**.
-4. Tap **Enroll monitor key** once. Have your Tesla NFC key card available; approve the request on the Tesla screen. Check Controls → Locks for the new key. This is **Tesla vehicle-key enrollment**, not Android Bluetooth bonding.
-5. Tap **Read charge state**. Watch for a fresh `ChargeState` result. Never read from a sleeping car during this stage.
-6. Capture the on-screen diagnostics or `adb logcat -s TeslaBLE:* AndroidRuntime:*` for failures. Do **not** include key material when sharing logs.
+Supported read/connection commands include `status`, `connect` (with the saved VIN), `read-charge`, `disconnect`, `poll-on`, `poll-off`, and `poll-interval`. `pair` is a separate enrollment action and is not part of normal telemetry use. Keep API credentials out of shell history, process arguments, logs, and URLs.
 
-The app does not poll automatically. Keep it in the foreground for testing. Pairing a key may consume one of the vehicle's allowed key slots. Remove the entry from Controls → Locks if testing is abandoned. Tesla's VCSEC has a limited number of simultaneous Bluetooth connections (keyfobs/phone keys can occupy them).
+## Build, update, and tests
 
-## Limitations and development notes
+- The CI workflow is `.github/workflows/android-apk.yml`; it builds the APK and runs the repository's `unittest` checks with the Android/JDK toolchain.
+- Local contract tests: `python3 -m unittest discover -s tests -v`. Java harness tests require a usable JDK (`java` and `javac`).
+- Before installing an update, confirm package identity and compare its signing certificate with the installed package. Update with `adb install -r`; do not uninstall or clear app data. This preserves the enrolled key and preferences.
+- The controller uses `yoziru/tesla-ble`, which is AGPL-3.0; observe its license obligations when distributing builds.
 
-- The C++ Tesla protocol dependency (`yoziru/tesla-ble`) uses the **AGPL-3.0** license. Distributing builds requires following that license's obligations. The Android/JNI glue is only an initial test implementation.
-- This CMake version pins upstream commit `42b899b7816cc3700b7361e65b526fdc04d19a51` (October 12, 2026) for repeatability; the snapshot is not device-validated.
-- This prototype hasn't been independently verified against a real Tesla. Pairing acceptance, infotainment reachability, permissions, CCCD, and read-only Vehicle Monitor role need real hardware testing.
-- No automated reconnect, lifecycle-resilient background service, driver-screen-safe experience, charging commands, or wake support are included. Those come after the initial app works reliably.
-- BLE radio performance varies by Android vendor. Some models restrict scanning during airplane mode or power-saving mode.
-- `range_km` and `est_range_km` are Tesla-reported range estimates, not an independent prediction of actual achievable range.
-- Android's Keystore secures app keys at rest subject to device security; rooted devices can still be compromised while the app runs. No backup is allowed.
+## Important integration boundary
 
-## File map
-
-- `app/src/main/java/org/opencharge/teslable/MainActivity.java` — UI, Android BLE GATT, queue/framing
-- `app/src/main/java/org/opencharge/teslable/NativeTesla.java` — Tesla protocol JNI and Android Keystore storage
-- `app/src/main/cpp/native_bridge.cpp` — JNI bridge to the TeslaBLE C++ library
-- `app/src/main/cpp/CMakeLists.txt` — CMake dependency fetch/build
-- `.github/workflows/android-apk.yml` — GitHub Actions APK builder
-
-## Why a source ZIP instead of APK here?
-
-The development runtime used to prepare this bundle does not have an Android SDK, NDK, Gradle, `aapt2`, or an Android device attached, and has no network access to install them. Therefore no finished `.apk` can be built or tested in this runtime. **Do not rename this ZIP as an APK.** Use GitHub Actions or Android Studio as above to build it.
+The current HTTP server binds exactly to `127.0.0.1:8765` and requires a bearer token. The Android service itself is `exported=false`; its in-process Binder is not an inter-app API. Do not expose the API on LAN, embed the bearer token in DiPlay source/manifests, or forward it beyond local development. For production DiPlay IPC, verify both APK signing identities first and prefer a narrowly permission-controlled Binder interface if signing permits; otherwise define a secure token provisioning mechanism.
