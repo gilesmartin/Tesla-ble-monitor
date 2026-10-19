@@ -6,6 +6,8 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 /** Real-loopback HTTP integration checks; no Android framework or external network. */
@@ -55,9 +57,12 @@ public final class TelemetryHttpServerHarness {
     private static String[] bearer(String token) { return new String[] { "Authorization: Bearer " + token }; }
     public static void main(String[] args) throws Exception {
         AtomicReference<String> token = new AtomicReference<>(TOKEN);
+        AtomicBoolean driveSubscribed = new AtomicBoolean(false);
+        AtomicInteger subscriptionEvents = new AtomicInteger(0);
         TelemetryHttpServer server = new TelemetryHttpServer(
             () -> "{\"available\":false,\"fresh\":false}",
             () -> "{\"service_running\":true}", token::get,
+            enabled -> { driveSubscribed.set(enabled); subscriptionEvents.incrementAndGet(); },
             InetAddress.getByName("127.0.0.1"), 0);
         server.start();
         try {
@@ -73,6 +78,30 @@ public final class TelemetryHttpServerHarness {
             check(telemetry.headers.toLowerCase().contains("cache-control: no-store"), "responses must not be cached");
             Reply status = request(server.getPort(), "GET", "/v1/status", bearer(TOKEN), 0);
             check(status.status == 200 && status.body.contains("service_running"), "authorized status route failed");
+            check(request(server.getPort(), "POST", "/v1/telemetry/subscribe", null, 0).status == 401,
+                "drive subscription must require bearer authentication");
+            check(!driveSubscribed.get() && subscriptionEvents.get() == 0,
+                "unauthenticated subscription must not reach its callback");
+            check(request(server.getPort(), "POST", "/v1/telemetry/subscribe", bearer("wrong-token"), 0).status == 401,
+                "invalid bearer token must not subscribe");
+            Reply subscribe = request(server.getPort(), "POST", "/v1/telemetry/subscribe", bearer(TOKEN), 0);
+            check(subscribe.status == 200 && subscribe.body.contains("subscribed"), "authorized subscription route failed");
+            check(driveSubscribed.get() && subscriptionEvents.get() == 1, "authorized subscribe callback was not delivered");
+            check(request(server.getPort(), "GET", "/v1/telemetry/subscribe", bearer(TOKEN), 0).status == 405,
+                "subscription endpoint must reject non-POST methods");
+            int eventsBeforePlainGet = subscriptionEvents.get();
+            check(request(server.getPort(), "GET", "/v1/telemetry", bearer(TOKEN), 0).status == 200,
+                "legacy authenticated GET must remain available");
+            check(subscriptionEvents.get() == eventsBeforePlainGet,
+                "ordinary charge GET must not renew the speed subscription");
+            Reply heartbeat = request(server.getPort(), "GET", "/v1/telemetry", new String[] {
+                "Authorization: Bearer " + TOKEN, "X-Tesla-Drive-Subscription: active" }, 0);
+            check(heartbeat.status == 200 && subscriptionEvents.get() == eventsBeforePlainGet + 1,
+                "authenticated active speed GET should renew the subscription");
+            Reply unsubscribe = request(server.getPort(), "POST", "/v1/telemetry/unsubscribe", bearer(TOKEN), 0);
+            check(unsubscribe.status == 200 && unsubscribe.body.contains("subscribed"), "authorized unsubscribe route failed");
+            check(!driveSubscribed.get() && subscriptionEvents.get() == eventsBeforePlainGet + 2,
+                "authorized unsubscribe callback was not delivered");
             check(request(server.getPort(), "GET", "/v1/unknown", bearer(TOKEN), 0).status == 404, "unknown route must be rejected");
             check(request(server.getPort(), "POST", "/v1/status", bearer(TOKEN), 0).status == 405, "non-GET method must be rejected");
             check(request(server.getPort(), "GET", "/v1/status", new String[] {

@@ -30,6 +30,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.os.SystemClock;
 import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -72,6 +73,11 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private static final String CHANNEL_ID = "tesla_ble_monitor";
     private static final int NOTIFICATION_ID = 7303;
     private static final int DEFAULT_POLL_SECONDS = 15;
+    private static final long DRIVE_POLL_INTERVAL_MS = 250L;
+    private static final long DRIVE_READ_TIMEOUT_MS = 1500L;
+    private static final long DRIVE_FRESHNESS_MS = 1500L;
+    private static final long DRIVE_SUBSCRIPTION_LEASE_MS = 15_000L;
+    private static final long DRIVE_MAX_BACKOFF_MS = 5000L;
     private static final int MIN_POLL_SECONDS = 15;
     private static final int MAX_POLL_SECONDS = 3600;
     private static final long CONNECT_SCAN_MS = 10_000L;
@@ -140,6 +146,13 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private volatile String authenticationState = "unknown";
     private volatile String lastChargeJson;
     private volatile long lastChargeAtMs;
+    // DriveState is memory-only and is exposed only while its authenticated lease and freshness hold.
+    private volatile String lastDriveStateJson;
+    private volatile long lastDriveStateAtElapsedMs;
+    private volatile boolean driveSubscriptionActive;
+    private volatile long driveSubscriptionExpiresAtElapsedMs;
+    private boolean driveReadInFlight;
+    private int driveReadFailures;
     private Listener listener;
     private volatile TelemetryHttpServer apiServer;
     private final Runnable mqttFreshnessTask = new Runnable() {
@@ -185,6 +198,8 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private final Runnable chargeTimeout = () -> {
         if (pollInFlight) finishChargeFailure("ChargeState request timed out");
     };
+    private final Runnable drivePollTask = this::runDrivePoll;
+    private final Runnable driveTimeoutTask = () -> finishDriveReadFailure();
     private final ScanCallback scanCallback = new ScanCallback() {
         @Override public void onScanResult(int callbackType, ScanResult result) {
             if (result != null) main.post(() -> handleScanResult(result));
@@ -776,6 +791,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 try { tesla.connected(true); }
                 catch (RuntimeException e) { failConnection("Native Tesla BLE session could not start"); return; }
                 log("Tesla BLE transport ready; authenticated telemetry requires a valid enrolled key");
+                if (driveLeaseIsActive()) scheduleDrivePoll(0L);
                 notifyState();
                 if (pollEnabled) schedulePoll(0L);
             });
@@ -920,6 +936,94 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         if (pollEnabled && ready) main.postDelayed(pollTask, Math.max(0L, delayMs));
     }
 
+    private void onDriveSubscriptionChanged(boolean enabled) {
+        if (enabled) {
+            driveSubscriptionActive = true;
+            driveSubscriptionExpiresAtElapsedMs = SystemClock.elapsedRealtime() + DRIVE_SUBSCRIPTION_LEASE_MS;
+            main.post(() -> { if (ready && driveLeaseIsActive()) scheduleDrivePoll(0L); });
+        } else {
+            driveSubscriptionActive = false;
+            driveSubscriptionExpiresAtElapsedMs = 0L;
+            main.post(() -> {
+                main.removeCallbacks(drivePollTask);
+                main.removeCallbacks(driveTimeoutTask);
+                driveReadInFlight = false;
+                clearDriveState();
+            });
+        }
+    }
+
+    private boolean driveLeaseIsActive() {
+        return driveSubscriptionActive && SystemClock.elapsedRealtime() < driveSubscriptionExpiresAtElapsedMs;
+    }
+
+    private void scheduleDrivePoll(long delayMs) {
+        main.removeCallbacks(drivePollTask);
+        if (driveLeaseIsActive() && ready && nativeInitialized) {
+            main.postDelayed(drivePollTask, Math.max(0L, delayMs));
+        }
+    }
+
+    private void runDrivePoll() {
+        if (!driveLeaseIsActive()) {
+            driveSubscriptionActive = false;
+            driveSubscriptionExpiresAtElapsedMs = 0L;
+            main.removeCallbacks(driveTimeoutTask);
+            driveReadInFlight = false;
+            clearDriveState();
+            return;
+        }
+        if (!ready || !nativeInitialized) return;
+        if (driveReadInFlight || pollInFlight
+                || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
+            scheduleDrivePoll(DRIVE_POLL_INTERVAL_MS);
+            return;
+        }
+        driveReadInFlight = true;
+        main.removeCallbacks(driveTimeoutTask);
+        main.postDelayed(driveTimeoutTask, DRIVE_READ_TIMEOUT_MS);
+        try {
+            // Native readLegacyState uses NO_WAKE_FAIL; never route through vehicle-control commands.
+            if (!tesla.readLegacyState("drive")) finishDriveReadFailure();
+        } catch (RuntimeException e) {
+            finishDriveReadFailure();
+        }
+    }
+
+    private void finishDriveReadFailure() {
+        if (!driveReadInFlight) return;
+        driveReadInFlight = false;
+        main.removeCallbacks(driveTimeoutTask);
+        driveReadFailures = Math.min(driveReadFailures + 1, 5);
+        long delay = Math.min(DRIVE_MAX_BACKOFF_MS,
+                DRIVE_POLL_INTERVAL_MS * (1L << Math.min(driveReadFailures, 4)));
+        scheduleDrivePoll(delay);
+    }
+
+    private void clearDriveState() {
+        lastDriveStateJson = null;
+        lastDriveStateAtElapsedMs = 0L;
+    }
+
+    private static Double speedMph(JSONObject drive) {
+        if (drive == null) return null;
+        for (String key : new String[] { "speed_float", "speed" }) {
+            Object raw = drive.opt(key);
+            double mph;
+            if (raw instanceof Number) mph = ((Number) raw).doubleValue();
+            else if (raw instanceof String) {
+                try { mph = Double.parseDouble((String) raw); }
+                catch (NumberFormatException ignored) { continue; }
+            } else continue;
+            if (Double.isFinite(mph) && mph >= 0.0 && mph <= 250.0) return mph;
+        }
+        return null;
+    }
+
+    private static Object nullableJsonValue(Object value) {
+        return value == null ? JSONObject.NULL : value;
+    }
+
     private void finishChargeFailure(String reason) {
         if (!pollInFlight) return;
         pollInFlight = false;
@@ -988,6 +1092,10 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
 
     private void closeGattOnly() {
         ready = false;
+        main.removeCallbacks(drivePollTask);
+        main.removeCallbacks(driveTimeoutTask);
+        driveReadInFlight = false;
+        clearDriveState();
         writing = false;
         writes.clear();
         mtu = 23;
@@ -1087,7 +1195,8 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
 
     private void startApiServer() {
         try {
-            apiServer = new TelemetryHttpServer(this::buildTelemetryJson, this::buildStatusJson, apiTokenStore::getToken);
+            apiServer = new TelemetryHttpServer(this::buildTelemetryJson, this::buildStatusJson,
+                    apiTokenStore::getToken, this::onDriveSubscriptionChanged);
             apiServer.start();
             apiAvailable = true;
             log("Local telemetry API listening on 127.0.0.1:8765; bearer authentication required");
@@ -1123,7 +1232,27 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 response.put("battery_percent", fresh ? valueOrNull(last, "battery_percent") : JSONObject.NULL);
                 response.put("usable_battery_percent", fresh ? valueOrNull(last, "usable_battery_percent") : JSONObject.NULL);
                 response.put("range_km", fresh ? valueOrNull(last, "range_km") : JSONObject.NULL);
+                response.put("estimated_range_km", fresh ? valueOrNull(last, "est_range_km") : JSONObject.NULL);
                 response.put("charging", fresh ? valueOrNull(last, "charging") : JSONObject.NULL);
+                long driveNow = SystemClock.elapsedRealtime();
+                long driveAgeMs = lastDriveStateAtElapsedMs <= 0 ? -1L
+                        : Math.max(0L, driveNow - lastDriveStateAtElapsedMs);
+                JSONObject drive = null;
+                if (lastDriveStateJson != null) {
+                    try { drive = new JSONObject(lastDriveStateJson); }
+                    catch (JSONException ignored) { drive = null; }
+                }
+                boolean driveFresh = driveSubscriptionActive
+                        && driveNow < driveSubscriptionExpiresAtElapsedMs
+                        && ready && nativeInitialized && drive != null
+                        && driveAgeMs >= 0 && driveAgeMs <= DRIVE_FRESHNESS_MS;
+                response.put("drive_state_fresh", driveFresh);
+                response.put("drive_state_updated_at_elapsed_ms", lastDriveStateAtElapsedMs > 0
+                        ? lastDriveStateAtElapsedMs : JSONObject.NULL);
+                response.put("drive_state_age_ms", driveAgeMs >= 0 ? driveAgeMs : JSONObject.NULL);
+                response.put("speed_mph", driveFresh ? nullableJsonValue(speedMph(drive)) : JSONObject.NULL);
+                response.put("shift_state", driveFresh ? valueOrNull(drive, "shift_state") : JSONObject.NULL);
+                response.put("drive_state", driveFresh ? drive : JSONObject.NULL);
                 response.put("last_known", last == null ? JSONObject.NULL : last);
             } catch (JSONException ignored) { return "{\"error\":\"telemetry_unavailable\"}"; }
             return response.toString();
@@ -1259,13 +1388,24 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             main.post(() -> { if (target == legacyMqttPublisher) onLegacyTelemetry(json); });
             return;
         }
-        if (legacyMqttPublisher == null || !legacyMqttVin.equals(nativeVin) || !legacyMqttVin.equals(currentVin)
-                || json == null || json.length() > 32768) return;
+        if (json == null || json.length() > 32768) return;
         try {
             JSONObject event = new JSONObject(json);
             String section = event.optString("section", "");
             JSONObject data = event.optJSONObject("values");
             if (data == null) return;
+            if ("drive".equals(section) && ready && nativeInitialized
+                    && isValidVin(nativeVin) && nativeVin.equals(currentVin)
+                    && driveLeaseIsActive() && (driveReadInFlight || pollInFlight)) {
+                lastDriveStateJson = data.toString();
+                lastDriveStateAtElapsedMs = SystemClock.elapsedRealtime();
+                driveReadInFlight = false;
+                driveReadFailures = 0;
+                main.removeCallbacks(driveTimeoutTask);
+                scheduleDrivePoll(DRIVE_POLL_INTERVAL_MS);
+            }
+            LegacyMqttPublisher target = legacyMqttPublisher;
+            if (target == null || !legacyMqttVin.equals(nativeVin) || !legacyMqttVin.equals(currentVin)) return;
             Map<String, String> observed = new HashMap<>();
             java.util.Iterator<String> fields = data.keys();
             while (fields.hasNext()) {
@@ -1273,7 +1413,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 Object value = data.opt(name);
                 if (value instanceof Number || value instanceof Boolean || value instanceof String) observed.put(name, value.toString());
             }
-            legacyMqttPublisher.onTelemetry(section, LegacyMqttStateMapper.map(section, observed));
+            target.onTelemetry(section, LegacyMqttStateMapper.map(section, observed));
         } catch (JSONException ignored) { log("Native legacy telemetry was malformed; cached values were not refreshed"); }
     }
 
@@ -1313,6 +1453,12 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         main.removeCallbacks(connectTimeout);
         main.removeCallbacks(pollTask);
         main.removeCallbacks(chargeTimeout);
+        main.removeCallbacks(drivePollTask);
+        main.removeCallbacks(driveTimeoutTask);
+        driveSubscriptionActive = false;
+        driveSubscriptionExpiresAtElapsedMs = 0L;
+        driveReadInFlight = false;
+        clearDriveState();
         main.removeCallbacks(mqttFreshnessTask);
         if (mqttPublisher != null) { mqttPublisher.close(); mqttPublisher = null; }
         if (legacyMqttPublisher != null) { legacyMqttPublisher.close(); legacyMqttPublisher = null; }

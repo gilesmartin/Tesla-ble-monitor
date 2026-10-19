@@ -15,6 +15,7 @@ import java.security.MessageDigest;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /** Small authenticated, read-only HTTP listener. Production callers bind only 127.0.0.1. */
@@ -27,6 +28,7 @@ public final class TelemetryHttpServer implements AutoCloseable {
     private final Supplier<String> telemetryJson;
     private final Supplier<String> statusJson;
     private final Supplier<String> bearerToken;
+    private final Consumer<Boolean> driveSubscription;
     private final InetAddress bindAddress;
     private final int requestedPort;
     private volatile boolean running;
@@ -35,13 +37,24 @@ public final class TelemetryHttpServer implements AutoCloseable {
 
     public TelemetryHttpServer(Supplier<String> telemetryJson, Supplier<String> statusJson,
                                Supplier<String> bearerToken) {
-        this(telemetryJson, statusJson, bearerToken, loopbackAddress(), DEFAULT_PORT);
+        this(telemetryJson, statusJson, bearerToken, ignored -> { }, loopbackAddress(), DEFAULT_PORT);
+    }
+
+    public TelemetryHttpServer(Supplier<String> telemetryJson, Supplier<String> statusJson,
+                               Supplier<String> bearerToken, Consumer<Boolean> driveSubscription) {
+        this(telemetryJson, statusJson, bearerToken, driveSubscription, loopbackAddress(), DEFAULT_PORT);
     }
 
     public TelemetryHttpServer(Supplier<String> telemetryJson, Supplier<String> statusJson,
                                Supplier<String> bearerToken, InetAddress bindAddress, int port) {
-        if (telemetryJson == null || statusJson == null || bearerToken == null) {
-            throw new IllegalArgumentException("providers must not be null");
+        this(telemetryJson, statusJson, bearerToken, ignored -> { }, bindAddress, port);
+    }
+
+    public TelemetryHttpServer(Supplier<String> telemetryJson, Supplier<String> statusJson,
+                               Supplier<String> bearerToken, Consumer<Boolean> driveSubscription,
+                               InetAddress bindAddress, int port) {
+        if (telemetryJson == null || statusJson == null || bearerToken == null || driveSubscription == null) {
+            throw new IllegalArgumentException("providers and subscription callback must not be null");
         }
         if (bindAddress == null || !bindAddress.isLoopbackAddress()
                 || !"127.0.0.1".equals(bindAddress.getHostAddress())) {
@@ -51,6 +64,7 @@ public final class TelemetryHttpServer implements AutoCloseable {
         this.telemetryJson = telemetryJson;
         this.statusJson = statusJson;
         this.bearerToken = bearerToken;
+        this.driveSubscription = driveSubscription;
         this.bindAddress = bindAddress;
         this.requestedPort = port;
     }
@@ -122,7 +136,9 @@ public final class TelemetryHttpServer implements AutoCloseable {
         if (request == null) return;
         boolean telemetryRoute = "/v1/telemetry".equals(request.path);
         boolean statusRoute = "/v1/status".equals(request.path);
-        if (!telemetryRoute && !statusRoute) {
+        boolean subscribeRoute = "/v1/telemetry/subscribe".equals(request.path);
+        boolean unsubscribeRoute = "/v1/telemetry/unsubscribe".equals(request.path);
+        if (!telemetryRoute && !statusRoute && !subscribeRoute && !unsubscribeRoute) {
             respond(client.getOutputStream(), 404, "Not Found", error("not_found"));
             return;
         }
@@ -135,9 +151,31 @@ public final class TelemetryHttpServer implements AutoCloseable {
             respond(client.getOutputStream(), 401, "Unauthorized", error("unauthorized"));
             return;
         }
+        if (subscribeRoute || unsubscribeRoute) {
+            if (!"POST".equals(request.method)) {
+                respond(client.getOutputStream(), 405, "Method Not Allowed", error("method_not_allowed"));
+                return;
+            }
+            boolean enable = subscribeRoute;
+            try {
+                driveSubscription.accept(enable);
+                respond(client.getOutputStream(), 200, "OK", "{\"subscribed\":" + enable + "}");
+            } catch (RuntimeException e) {
+                respond(client.getOutputStream(), 500, "Internal Server Error", error("subscription_unavailable"));
+            }
+            return;
+        }
         if (!"GET".equals(request.method)) {
             respond(client.getOutputStream(), 405, "Method Not Allowed", error("method_not_allowed"));
             return;
+        }
+        if (telemetryRoute && request.driveHeartbeat) {
+            try {
+                driveSubscription.accept(true);
+            } catch (RuntimeException e) {
+                respond(client.getOutputStream(), 500, "Internal Server Error", error("subscription_unavailable"));
+                return;
+            }
         }
         try {
             String body = telemetryRoute ? telemetryJson.get() : statusJson.get();
@@ -180,8 +218,10 @@ public final class TelemetryHttpServer implements AutoCloseable {
         final String method;
         final String path;
         final String authorization;
-        Request(String method, String path, String authorization) {
+        final boolean driveHeartbeat;
+        Request(String method, String path, String authorization, boolean driveHeartbeat) {
             this.method = method; this.path = path; this.authorization = authorization;
+            this.driveHeartbeat = driveHeartbeat;
         }
     }
     private static final class BadRequest extends Exception {
@@ -216,7 +256,8 @@ public final class TelemetryHttpServer implements AutoCloseable {
         if (headers.containsKey("transfer-encoding")) throw new BadRequest();
         String contentLength = headers.get("content-length");
         if (contentLength != null && !"0".equals(contentLength)) throw new BadRequest();
-        return new Request(parts[0], parts[1], headers.get("authorization"));
+        return new Request(parts[0], parts[1], headers.get("authorization"),
+                "active".equalsIgnoreCase(headers.get("x-tesla-drive-subscription")));
     }
 
     private static String readLine(InputStream input, int[] total) throws IOException, HeaderTooLarge {
