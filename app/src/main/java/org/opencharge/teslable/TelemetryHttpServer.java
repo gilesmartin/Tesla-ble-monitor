@@ -87,7 +87,7 @@ public final class TelemetryHttpServer implements AutoCloseable {
         }
         serverSocket = socket;
         running = true;
-        Thread thread = new Thread(this::serve, "TeslaBLE-Telemetry-API");
+        Thread thread = new Thread(() -> serve(socket), "TeslaBLE-Telemetry-API");
         thread.setDaemon(true);
         acceptThread = thread;
         thread.start();
@@ -103,20 +103,36 @@ public final class TelemetryHttpServer implements AutoCloseable {
         return running && socket != null && socket.isBound() && !socket.isClosed();
     }
 
-    private void serve() {
-        while (running) {
-            ServerSocket listener = serverSocket;
-            if (listener == null) break;
-            try (Socket client = listener.accept()) {
-                client.setSoTimeout(5000);
-                handle(client);
-            } catch (SocketTimeoutException ignored) {
-                // Timed accept permits prompt shutdown without a busy loop.
-            } catch (IOException e) {
-                if (running) running = false;
+    private void serve(ServerSocket listener) {
+        try {
+            while (running && serverSocket == listener) {
+                Socket acceptedSocket;
+                try {
+                    acceptedSocket = listener.accept();
+                } catch (SocketTimeoutException ignored) {
+                    // Timed accept permits prompt shutdown without a busy loop.
+                    continue;
+                } catch (IOException e) {
+                    break;
+                }
+                try (Socket client = acceptedSocket) {
+                    client.setSoTimeout(5000);
+                    handle(client);
+                } catch (IOException ignored) {
+                    // A client reset/write failure must not terminate the listener.
+                }
+            }
+        } finally {
+            synchronized (this) {
+                try { listener.close(); } catch (IOException ignored) { }
+                // A previous worker must never clear a newer listener's state.
+                if (serverSocket == listener) {
+                    serverSocket = null;
+                    acceptThread = null;
+                    running = false;
+                }
             }
         }
-        running = false;
     }
 
     private void handle(Socket client) throws IOException {
