@@ -5,10 +5,11 @@ Android package: `org.opencharge.teslable` (min SDK 26, target SDK 35). The cont
 ## Current implementation
 
 - VIN-derived BLE advertisement matching and asynchronous GATT transport.
+- Android 12+ requires Bluetooth and precise-location permission for this vehicle beacon. The app deliberately does not declare `neverForLocation`: Android can otherwise hide the Tesla advertisement before the VIN matcher sees it. Location permission is used for Bluetooth result delivery; this app does not collect GPS locations or request background-location permission.
 - Enrolled Tesla monitor key remains in the controller's existing encrypted storage. Do not invoke `pair` or re-enrollment as part of routine telemetry work.
 - Foreground connected-device service keeps operating after the UI closes. A process restart resumes only a previously requested connection.
 - A saved connection request is restored after `BOOT_COMPLETED` for the active Android user. Boot restore is gated on a valid saved VIN and `desired_connection=true`, resets the bounded reconnect counter, and performs a passive scan before connecting. It does not use a remembered Bluetooth address. A real cold-power-cycle test remains pending.
-- Reconnect attempts are bounded (up to 8, with backoff); the persisted desire is cleared after exhaustion. A later explicit Connect starts a new attempt window.
+- Reconnect attempts continue indefinitely with capped backoff until explicitly disconnected. Temporary Bluetooth, permission, or advertisement failures preserve the saved connection intent.
 - A one-shot ChargeState read uses the native `NO_WAKE_SKIP`/`NO_WAKE_FAIL` policy. It sends no explicit wake command. Periodic polling is opt-in, defaults off, and uses the configured 15–3600 second interval.
 - Authenticated telemetry is persisted for last-known display; the API marks it stale and nulls the top-level live fields after its freshness window.
 - Authenticated, read-only loopback HTTP interface: see [`docs/LOCAL_API.md`](docs/LOCAL_API.md). There is not currently an exported cross-app bound service; DiPlay integration must preserve the API's security boundary or add a permission-controlled IPC path after signer compatibility is checked.

@@ -175,7 +175,12 @@ public final class MainActivity extends Activity implements TeslaBleService.List
                 required.add(Manifest.permission.BLUETOOTH_SCAN);
             if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
                 required.add(Manifest.permission.BLUETOOTH_CONNECT);
-        } else if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        }
+        // Without this permission Android filters Tesla's beacon when location has
+        // not been disavowed. Android 12+ requires fine/coarse to be requested together.
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= 31)
+                required.add(Manifest.permission.ACCESS_COARSE_LOCATION);
             required.add(Manifest.permission.ACCESS_FINE_LOCATION);
         }
         if (required.isEmpty()) {

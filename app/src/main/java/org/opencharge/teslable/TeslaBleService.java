@@ -553,7 +553,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private void startUserScan() {
         if (!hasBlePermissions()) {
             connectionState = "permission_required";
-            log("BLE scan requires Bluetooth scan/connect permissions; grant them in the app UI");
+            log("BLE scan requires Bluetooth and precise-location permissions; grant them in the app UI");
             notifyState();
             return;
         }
@@ -575,7 +575,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private void beginScan() {
         if (!hasBlePermissions()) {
             connectionState = "permission_required";
-            log("BLE permission missing; saved connection intent preserved for retry");
+            log("Bluetooth or precise-location permission missing; saved connection intent preserved for retry");
             notifyState();
             if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
             return;
@@ -1123,11 +1123,16 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     private boolean hasBlePermissions() {
+        // Bluetooth permission alone is insufficient for Tesla advertisements that
+        // Android classifies as location-capable beacons. Keep retries pending until
+        // the permission is granted; never fall back to a remembered radio address.
+        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED)
+            return false;
         if (Build.VERSION.SDK_INT >= 31) {
             return checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
                 && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
         }
-        return checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
+        return true;
     }
 
     private void saveVin(String vin) {
