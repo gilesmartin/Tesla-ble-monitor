@@ -84,6 +84,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private static final long INITIAL_RECONNECT_MS = 5_000L;
     private static final long MAX_RECONNECT_MS = 60_000L;
     private static final long CHARGE_TIMEOUT_MS = 12_000L;
+    private static final long POLL_BUSY_RECHECK_MS = 5_000L;
     private static final long MQTT_FRESHNESS_CHECK_MS = 15_000L;
 
     private static final UUID GATT_SERVICE = UUID.fromString("00000211-b2d1-43f0-9b88-960cebf8b91e");
@@ -925,7 +926,9 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         if (!pollEnabled) return;
         if (!ready) return; // No BLE work while unavailable; reconnect scanning has its own backoff.
         if (pollInFlight || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
-            schedulePoll(pollIntervalSeconds * 1000L);
+            // This poll is already due. Recheck owner availability without losing a full interval.
+            // No BLE read is sent until the existing read/command has completed.
+            schedulePoll(POLL_BUSY_RECHECK_MS);
             return;
         }
         requestCharge(true);
