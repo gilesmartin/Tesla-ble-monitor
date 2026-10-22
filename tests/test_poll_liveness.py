@@ -13,7 +13,7 @@ class PollLivenessTests(unittest.TestCase):
   constants='\n'.join(re.findall(r'    private static final long POLL_BUSY_RECHECK_MS\s*=\s*[^;]+;',text))
   source='''import java.util.*;
 public final class PollLivenessHarness {
- boolean pollEnabled=true,ready=true,pollInFlight=false; int pollIntervalSeconds=720,reads;
+ boolean pollEnabled=true,ready=true,pollInFlight=false,driveReadInFlight=false; int pollIntervalSeconds=720,reads;
  long now; final Handler main=new Handler(); final Runnable pollTask=this::runPoll;
  static final class Legacy { boolean pending; boolean hasPendingCommand(){return pending;} }
  Legacy legacyMqttPublisher=new Legacy();
@@ -23,10 +23,17 @@ public final class PollLivenessHarness {
   void postDelayed(Runnable r,long delay){tasks.computeIfAbsent(now+delay,k->new ArrayList<>()).add(r);}
   void advance(long target){int guard=0;while(!tasks.isEmpty()&&tasks.firstKey()<=target){if(++guard>1000)throw new AssertionError("busy spin");var e=tasks.pollFirstEntry();now=e.getKey();for(var r:e.getValue())r.run();}now=target;}
  }
- void requestCharge(boolean periodic){if(pollInFlight||legacyMqttPublisher.pending)throw new AssertionError("overlapping vehicle read");reads++;}
+ void requestCharge(boolean periodic){if(pollInFlight||driveReadInFlight||legacyMqttPublisher.pending)throw new AssertionError("overlapping vehicle read");reads++;}
 '''+constants+'\n'+methods+'''
  public static void main(String[]args){
   PollLivenessHarness s=new PollLivenessHarness();
+  if(args[0].equals("drive")){
+   s.driveReadInFlight=true;s.schedulePoll(0);s.main.advance(0);
+   if(s.reads!=0)throw new AssertionError("charge overlapped DriveState owner");
+   s.main.advance(5000);s.driveReadInFlight=false;s.main.advance(60000);
+   if(s.reads!=1)throw new AssertionError("due charge not recovered after DriveState owner released");
+   s.main.advance(80000);if(s.reads!=1)throw new AssertionError("duplicate catch-up charge");return;
+  }
   if(args[0].equals("cadence")){
    s.schedulePoll(720000);s.main.advance(719999);if(s.reads!=0)throw new AssertionError("poll cadence shortened");
    s.main.advance(720000);if(s.reads!=1)throw new AssertionError("normal scheduled poll missing");return;
@@ -52,6 +59,7 @@ public final class PollLivenessHarness {
    r=subprocess.run(['java','-cp',d,'PollLivenessHarness',mode],capture_output=True,text=True);self.assertEqual(r.returncode,0,r.stdout+r.stderr)
  def test_brief_vehicle_command_does_not_lose_due_telemetry_poll(self):self.run_case('command')
  def test_brief_existing_read_does_not_lose_due_telemetry_poll(self):self.run_case('inflight')
+ def test_due_charge_defers_to_drive_read_and_catches_up(self):self.run_case('drive')
  def test_normal_poll_interval_is_preserved(self):self.run_case('cadence')
  def test_disabled_polling_stays_disabled(self):self.run_case('disabled')
  def test_disconnected_owner_performs_no_read(self):self.run_case('disconnected')

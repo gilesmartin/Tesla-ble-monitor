@@ -141,6 +141,10 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private volatile boolean tokenConfigured;
     private volatile boolean apiAvailable;
     private volatile int pollIntervalSeconds = DEFAULT_POLL_SECONDS;
+    private static final long ROUTING_CHARGE_INTERVAL_MS = 30_000L;
+    private static final long ROUTING_CHARGE_MAX_BACKOFF_MS = 120_000L;
+    private volatile long lastChargeAtElapsedMs = -1L;
+    private long lastChargeRequestElapsedMs = -1L;
     private int pollFailures;
     private int reconnectAttempts;
     private volatile String connectionState = "disconnected";
@@ -200,6 +204,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         if (pollInFlight) finishChargeFailure("ChargeState request timed out");
     };
     private final Runnable drivePollTask = this::runDrivePoll;
+    private final Runnable routingChargeTask = this::refreshRoutingChargeIfDue;
     private final Runnable driveTimeoutTask = () -> finishDriveReadFailure();
     private final ScanCallback scanCallback = new ScanCallback() {
         @Override public void onScanResult(int callbackType, ScanResult result) {
@@ -904,11 +909,13 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             if (!fromPoll) log("ChargeState read requires an active BLE connection; use connect first");
             return;
         }
-        if (pollInFlight) {
-            if (!fromPoll) log("ChargeState request already in flight; overlapping read suppressed");
+        if (pollInFlight || driveReadInFlight
+                || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
+            if (!fromPoll) log("Native BLE owner busy; overlapping ChargeState read suppressed");
             return;
         }
         pollInFlight = true;
+        lastChargeRequestElapsedMs = SystemClock.elapsedRealtime();
         main.removeCallbacks(chargeTimeout);
         main.postDelayed(chargeTimeout, CHARGE_TIMEOUT_MS);
         try {
@@ -925,7 +932,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private void runPoll() {
         if (!pollEnabled) return;
         if (!ready) return; // No BLE work while unavailable; reconnect scanning has its own backoff.
-        if (pollInFlight || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
+        if (pollInFlight || driveReadInFlight || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
             // This poll is already due. Recheck owner availability without losing a full interval.
             // No BLE read is sent until the existing read/command has completed.
             schedulePoll(POLL_BUSY_RECHECK_MS);
@@ -1003,7 +1010,34 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         scheduleDrivePoll(delay);
     }
 
+    /** Fresh, subscribed driving observations may refresh charge, never wake/control the car. */
+    private void refreshRoutingChargeIfDue() {
+        if (!pollEnabled || !ready || !nativeInitialized || !driveLeaseIsActive()
+                || pollInFlight || driveReadInFlight
+                || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) return;
+        long now = SystemClock.elapsedRealtime();
+        long driveAge = now - lastDriveStateAtElapsedMs;
+        if (lastDriveStateJson == null || lastDriveStateAtElapsedMs <= 0
+                || driveAge < 0 || driveAge > DRIVE_FRESHNESS_MS || lastChargeJson == null) return;
+        try {
+            JSONObject charge = new JSONObject(lastChargeJson);
+            if (!Boolean.FALSE.equals(charge.opt("charging"))) return;
+            JSONObject drive = new JSONObject(lastDriveStateJson);
+            String gear = drive.optString("shift_state", "").trim().toUpperCase(Locale.US);
+            Double mph = speedMph(drive);
+            boolean driving = "D".equals(gear) || "R".equals(gear)
+                    || (gear.isEmpty() && mph != null && mph > 0.0);
+            if (!driving) return; // P/N/unknown never accelerate a parked/charging poll.
+        } catch (JSONException ignored) { return; }
+        if (lastChargeAtElapsedMs >= 0 && now - lastChargeAtElapsedMs < ROUTING_CHARGE_INTERVAL_MS) return;
+        long retryDelay = Math.min(ROUTING_CHARGE_MAX_BACKOFF_MS,
+                ROUTING_CHARGE_INTERVAL_MS * (1L << Math.min(pollFailures, 2)));
+        if (lastChargeRequestElapsedMs >= 0 && now - lastChargeRequestElapsedMs < retryDelay) return;
+        requestCharge(true); // Uses the existing no-wake read path; normal saved cadence is unchanged.
+    }
+
     private void clearDriveState() {
+        main.removeCallbacks(routingChargeTask);
         lastDriveStateJson = null;
         lastDriveStateAtElapsedMs = 0L;
     }
@@ -1411,6 +1445,9 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 driveReadFailures = 0;
                 main.removeCallbacks(driveTimeoutTask);
                 scheduleDrivePoll(DRIVE_POLL_INTERVAL_MS);
+                // Defer until the native callback unwinds; the BLE owner remains serialized.
+                main.removeCallbacks(routingChargeTask);
+                main.post(routingChargeTask);
             }
             LegacyMqttPublisher target = legacyMqttPublisher;
             if (target == null || !legacyMqttVin.equals(nativeVin) || !legacyMqttVin.equals(currentVin)) return;
@@ -1433,6 +1470,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             synchronized (stateLock) {
                 lastChargeJson = value.toString();
                 lastChargeAtMs = timestamp;
+                lastChargeAtElapsedMs = SystemClock.elapsedRealtime();
                 preferences.edit().putString(PREF_LAST_CHARGE, lastChargeJson)
                         .putLong(PREF_LAST_CHARGE_AT, timestamp).apply();
             }
