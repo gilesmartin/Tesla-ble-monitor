@@ -13,7 +13,7 @@ class PollLivenessTests(unittest.TestCase):
   constants='\n'.join(re.findall(r'    private static final long POLL_BUSY_RECHECK_MS\s*=\s*[^;]+;',text))
   source='''import java.util.*;
 public final class PollLivenessHarness {
- boolean pollEnabled=true,ready=true,pollInFlight=false,driveReadInFlight=false; int pollIntervalSeconds=720,reads;
+ boolean publicWakeInFlight=false,pollEnabled=true,ready=true,pollInFlight=false,driveReadInFlight=false; int pollIntervalSeconds=720,reads;
  long now; final Handler main=new Handler(); final Runnable pollTask=this::runPoll;
  static final class Legacy { boolean pending; boolean hasPendingCommand(){return pending;} }
  Legacy legacyMqttPublisher=new Legacy();
@@ -27,6 +27,10 @@ public final class PollLivenessHarness {
 '''+constants+'\n'+methods+'''
  public static void main(String[]args){
   PollLivenessHarness s=new PollLivenessHarness();
+  if(args[0].equals("publicwake")){
+   s.publicWakeInFlight=true;s.schedulePoll(0);s.main.advance(5000);if(s.reads!=0)throw new AssertionError("poll overlapped explicit wake");
+   s.publicWakeInFlight=false;s.main.advance(60000);if(s.reads!=1)throw new AssertionError("due poll not recovered after wake");return;
+  }
   if(args[0].equals("drive")){
    s.driveReadInFlight=true;s.schedulePoll(0);s.main.advance(0);
    if(s.reads!=0)throw new AssertionError("charge overlapped DriveState owner");
@@ -60,6 +64,7 @@ public final class PollLivenessHarness {
  def test_brief_vehicle_command_does_not_lose_due_telemetry_poll(self):self.run_case('command')
  def test_brief_existing_read_does_not_lose_due_telemetry_poll(self):self.run_case('inflight')
  def test_due_charge_defers_to_drive_read_and_catches_up(self):self.run_case('drive')
+ def test_due_poll_waits_for_explicit_public_wake_owner(self):self.run_case('publicwake')
  def test_normal_poll_interval_is_preserved(self):self.run_case('cadence')
  def test_disabled_polling_stays_disabled(self):self.run_case('disabled')
  def test_disconnected_owner_performs_no_read(self):self.run_case('disconnected')

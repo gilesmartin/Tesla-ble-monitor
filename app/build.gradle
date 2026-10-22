@@ -1,14 +1,15 @@
 plugins { id 'com.android.application' }
 android {
     namespace 'org.opencharge.teslable'
+    packaging { jniLibs { useLegacyPackaging true; keepDebugSymbols += ['**/libcloudflared.so'] } }
     compileSdk 35
     ndkVersion '28.2.13676358'
     defaultConfig {
         applicationId 'org.opencharge.teslable'
         minSdk 26
         targetSdk 35
-        versionCode 11
-        versionName '0.3.6-routing-refresh'
+        versionCode 12
+        versionName '0.3.7-public-wake'
         externalNativeBuild {
             cmake {
                 cppFlags '-std=c++23 -fexceptions -frtti'
@@ -43,3 +44,10 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
     implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
 }
+
+// Pinned executable is a generated build input, not a committed binary or secret.
+tasks.register('fetchPinnedCloudflared', Exec) {
+    workingDir rootProject.projectDir
+    commandLine 'python3', rootProject.file('tools/fetch_cloudflared.py').absolutePath
+}
+tasks.named('preBuild').configure { dependsOn 'fetchPinnedCloudflared' }

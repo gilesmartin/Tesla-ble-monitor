@@ -7,3 +7,13 @@ local.properties
 *.keystore
 *.apk
 .DS_Store
+
+# Generated, SHA-pinned upstream executable; fetched on build.
+/app/src/main/jniLibs/arm64-v8a/libcloudflared.so
+/app/src/main/jniLibs/arm64-v8a/libcloudflared.download
+
+/.cloudflared-build/
+/app/src/main/assets/cloudflared-build.json
+/app/src/main/assets/cloudflared-LICENSE
+
+/app/src/main/assets/cloudflared-THIRD-PARTY-NOTICES.txt

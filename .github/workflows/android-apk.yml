@@ -18,6 +18,8 @@ jobs:
           packages: 'platform-tools'
       - name: Android SDK and NDK
         run: sdkmanager --install 'platforms;android-35' 'build-tools;35.0.0' 'cmake;3.22.1' 'ndk;28.2.13676358'
+      - name: Build pinned Android-native Cloudflare connector (no credentials)
+        run: python3 tools/fetch_cloudflared.py
       - name: Run source and loopback protocol tests
         run: python3 -m unittest discover -s tests -v
       - name: Compile pinned native protocol fixtures and execute them offline

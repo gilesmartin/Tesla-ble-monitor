@@ -100,6 +100,7 @@ public final class MainActivity extends Activity implements TeslaBleService.List
         title.setTextColor(Color.rgb(14, 48, 82));
         body.addView(title);
         body.addView(makeText("Bluetooth is owned by the foreground service. Reads use the native no-wake policy; polling is opt-in.", 13));
+        body.addView(makeButton("Public wake / Cloudflare Tunnel", () -> startActivity(new Intent(MainActivity.this, PublicWakeSettingsActivity.class))));
         body.addView(makeButton("MQTT / Home Assistant settings", () ->
             startActivity(new Intent(MainActivity.this, MqttSettingsActivity.class))));
         body.addView(makeText("Vehicle VIN", 15));

@@ -34,7 +34,7 @@ class LegacyMqttStateMapper {static Map<String,String> map(String s,Map<String,S
 class LegacyMqttPublisher {boolean pending;boolean hasPendingCommand(){return pending;}void onTelemetry(String s,Map<String,String>m){}}
 public class RoutingChargeHarness implements Sink {
  static long clock=1000000;static String gear="D";static double speed=30;static boolean charging=false;
- boolean ready=true,nativeInitialized=true,pollEnabled=true,pollInFlight=false,driveReadInFlight=true,driveSubscriptionActive=true;
+ boolean publicWakeInFlight=false,ready=true,nativeInitialized=true,pollEnabled=true,pollInFlight=false,driveReadInFlight=true,driveSubscriptionActive=true;
  long driveSubscriptionExpiresAtElapsedMs=clock+60000,lastDriveStateAtElapsedMs=clock,lastChargeAtElapsedMs=-1,lastChargeRequestElapsedMs=-1;
  String currentVin="SYNTHETIC",nativeVin="SYNTHETIC",legacyMqttVin="SYNTHETIC",lastChargeJson="CHARGE",lastDriveStateJson;
  int reads,pollFailures,driveReadFailures,pollIntervalSeconds=720; LegacyMqttPublisher legacyMqttPublisher;
@@ -54,6 +54,7 @@ public class RoutingChargeHarness implements Sink {
  void drive(){driveReadInFlight=true;onLegacyTelemetry("EVENT");main.flush();}
  public static void main(String[]args)throws Exception{
   RoutingChargeHarness s=new RoutingChargeHarness();String mode=args[0];
+  if(mode.equals("publicwake")){s.driveReadInFlight=false;s.publicWakeInFlight=true;s.requestCharge(false);if(s.reads!=0)throw new AssertionError("manual charge overlapped explicit wake");s.publicWakeInFlight=false;s.requestCharge(false);if(s.reads!=1)throw new AssertionError("charge remained blocked after wake");return;}
   if(mode.equals("manual_owner")){s.requestCharge(false);if(s.reads!=0)throw new AssertionError("manual charge overlapped DriveState native owner");return;}
   if(mode.equals("accepted_sample")){s.drive();if(s.reads!=1)throw new AssertionError("initial overdue battery read missing");s.onTelemetry("CHARGE");if(s.lastChargeAtElapsedMs!=clock||s.pollInFlight)throw new AssertionError("accepted sample did not refresh monotonic battery state");if(s.lastScheduledPoll!=720000)throw new AssertionError("normal saved charge interval changed");clock+=1000;s.drive();if(s.reads!=1)throw new AssertionError("fresh accepted battery read was duplicated");clock+=30000;s.driveSubscriptionExpiresAtElapsedMs=clock+60000;s.drive();if(s.reads!=2)throw new AssertionError("next real battery read missing after driving interval");return;}
   if(mode.equals("driving")){s.drive();if(s.reads!=1)throw new AssertionError("fresh driving callback did not refresh overdue battery");return;}
@@ -72,6 +73,7 @@ public class RoutingChargeHarness implements Sink {
    p=Path(d)/'RoutingChargeHarness.java';p.write_text(source)
    c=subprocess.run(['javac','-d',d,str(p)],capture_output=True,text=True);self.assertEqual(c.returncode,0,c.stderr)
    r=subprocess.run(['java','-cp',d,'RoutingChargeHarness',mode],capture_output=True,text=True);self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+ def test_manual_charge_respects_explicit_public_wake_owner(self):self.run_case('publicwake')
  def test_manual_charge_respects_drive_native_owner(self):self.run_case('manual_owner')
  def test_fresh_driving_callback_refreshes_overdue_battery(self):self.run_case('driving')
  def test_charging_preserves_normal_cadence(self):self.run_case('charging')

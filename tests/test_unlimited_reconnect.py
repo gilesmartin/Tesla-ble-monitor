@@ -10,7 +10,7 @@ SERVICE = ROOT / 'app/src/main/java/org/opencharge/teslable/TeslaBleService.java
 
 
 def method(source, name):
-    start = source.index('private void ' + name + '(')
+    start = re.search(r'private (?:void|boolean) '+name+r'\(',source).start()
     opening = source.index('{', start)
     depth = 1
     end = opening + 1
@@ -26,7 +26,7 @@ class UnlimitedReconnectTests(unittest.TestCase):
         constants = '\n'.join(re.findall(r'private static final (?:int|long) (?:MAX_RECONNECT_ATTEMPTS|INITIAL_RECONNECT_MS|MAX_RECONNECT_MS) = [^;]+;', source))
         java = '''public class RetryHarness {
           CONSTANTS
-          boolean desiredConnection = true;
+          boolean desiredConnection = true, publicWakeLease = false;
           int reconnectAttempts;
           String connectionState;
           static final String PREF_DESIRED="desired", PREF_RETRIES="retries";
@@ -48,7 +48,7 @@ class UnlimitedReconnectTests(unittest.TestCase):
             CHECKS
             System.out.print("PASS");
           }
-        }'''.replace('CONSTANTS', constants).replace('METHOD', method(source, 'scheduleReconnect')).replace('CHECKS', checks)
+        }'''.replace('CONSTANTS', constants).replace('METHOD', method(source, 'connectionWanted')+'\n'+method(source, 'scheduleReconnect')).replace('CHECKS', checks)
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / 'RetryHarness.java'
             path.write_text(java)
@@ -91,6 +91,9 @@ class UnlimitedReconnectTests(unittest.TestCase):
           if(h.main.scheduled!=0)throw new AssertionError("Explicit disconnect ignored");
         ''')
 
+
+    def test_explicit_wake_lease_does_not_enable_persistent_connection_intent(self):
+        self.run_scheduler('h.desiredConnection=false;h.publicWakeLease=true;h.scheduleReconnect();if(h.main.scheduled!=1||h.desiredConnection)throw new AssertionError("temporary wake lease changed saved intent");h.publicWakeLease=false;h.scheduleReconnect();if(h.main.scheduled!=1)throw new AssertionError("retry survived expired wake lease");')
 
 if __name__ == '__main__':
     unittest.main()

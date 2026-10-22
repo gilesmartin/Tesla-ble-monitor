@@ -49,6 +49,16 @@ import java.util.UUID;
 /** Sole owner of the native Tesla client and Bluetooth GATT connection. */
 public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private static final String TAG = "TeslaBLE";
+    public static final String ACTION_PUBLIC_WAKE_RECONFIGURE="org.opencharge.teslable.PUBLIC_WAKE_RECONFIGURE";
+    private PublicWakeConfigStore publicWakeConfig;
+    private PublicWakeHttpServer publicWakeServer;
+    private CloudflaredSupervisor cloudflared;
+    private PublicWakeCoordinator publicWakeCoordinator;
+    private volatile boolean publicWakeInFlight;
+    private boolean publicWakeLease;
+    private String publicWakeTargetVin="";
+    private static volatile TeslaBleService publicWakeInstance;
+
     public static final String ACTION_COMMAND = "org.opencharge.teslable.COMMAND";
     public static final String ACTION_UI_SCAN = "org.opencharge.teslable.UI_SCAN";
     public static final String ACTION_UI_CONNECT = "org.opencharge.teslable.UI_CONNECT";
@@ -182,7 +192,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         if (!scanning) return;
         stopScan();
         log(scanDiagnostics.summary());
-        if (autoConnectAfterScan && desiredConnection) {
+        if (autoConnectAfterScan && connectionWanted()) {
             connectionState = "advertisement_unavailable";
             log("No matching Tesla BLE advertisement found; reconnect will back off");
             notifyState();
@@ -194,7 +204,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         }
     };
     private final Runnable reconnectTask = () -> {
-        if (desiredConnection && !ready && gatt == null) beginPassiveReconnectScan();
+        if (connectionWanted() && !ready && gatt == null) beginPassiveReconnectScan();
     };
     private final Runnable connectTimeout = () -> {
         if (gatt != null && !ready) failConnection("BLE connection setup timed out");
@@ -217,7 +227,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 log("BLE scan failed with code " + errorCode);
                 log(scanDiagnostics.summary());
                 notifyState();
-                if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
+                if (autoConnectAfterScan && connectionWanted()) scheduleReconnect();
             });
         }
     };
@@ -240,6 +250,9 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             String legacyVin = getSharedPreferences(LEGACY_ACTIVITY_PREFS, MODE_PRIVATE).getString(PREF_VIN, "");
             if (isValidVin(legacyVin)) saveVin(legacyVin);
         }
+        publicWakeConfig=new PublicWakeConfigStore(this);
+        publicWakeInstance=this;
+        initializePublicWakeOwner();
         tesla = new NativeTesla(this, this);
         if (isValidVin(currentVin)) initializeNativeForVin(currentVin);
         startApiServer();
@@ -259,6 +272,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         serviceStarted = true;
         boolean foreground = ensureForeground();
         foregroundActive = foreground;
+        if(foreground)ensurePublicWakeGateway();
         String initialAction = intent == null ? null : intent.getAction();
         if (!foreground && (intent == null || isBleAction(initialAction, intent))) {
             log("Foreground service could not start; BLE command rejected");
@@ -274,7 +288,10 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         String action = intent.getAction();
         if (action == null) action = ACTION_COMMAND;
         if (apiServer == null && !"stop".equals(intent.getStringExtra(EXTRA_COMMAND))) startApiServer();
-        if (ACTION_UI_SCAN.equals(action)) {
+        if(ACTION_PUBLIC_WAKE_RECONFIGURE.equals(action)){
+            if(!foreground){stopSelf(startId);return START_NOT_STICKY;}
+            closePublicWakeGateway();ensurePublicWakeGateway();
+        } else if (ACTION_UI_SCAN.equals(action)) {
             String vin = intent.getStringExtra(EXTRA_VIN);
             if (isValidVin(vin)) { saveVin(vin); initializeNativeForVin(vin); startUserScan(); }
             else log("Scan requires a valid saved vehicle VIN");
@@ -451,14 +468,14 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                         notifyState();
                     }
                     @Override public boolean execute(String id, String op, String[] args) {
-                        if (!isNativeInitialized()) return false;
+                        if (publicWakeInFlight || !isNativeInitialized()) return false;
                         if ("generate-keys".equals(op)) return tesla.executeLegacy(id, op, args);
                         if (!isReady()) return false;
                         if ("deploy-key".equals(op) && !keyPresent) return false;
                         return tesla.executeLegacy(id, op, args);
                     }
                     @Override public boolean read(String section) {
-                        return isReady() && tesla.readLegacyState(section);
+                        return !publicWakeInFlight && isReady() && tesla.readLegacyState(section);
                     }
                     @Override public boolean setPolicy(Boolean polling, Integer seconds) {
                         if (seconds != null && (seconds < 30 || seconds > 3600)) return false;
@@ -531,6 +548,57 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         return value instanceof Number ? ((Number) value).doubleValue() : null;
     }
 
+    private boolean connectionWanted(){return desiredConnection||publicWakeLease;}
+    private void initializePublicWakeOwner(){
+        publicWakeCoordinator=new PublicWakeCoordinator(new PublicWakeCoordinator.Owner(){
+            public long now(){return SystemClock.elapsedRealtime();}
+            public boolean hasEnrollment(){return nativeInitialized&&keyPresent&&isValidVin(currentVin)&&currentVin.equals(nativeVin)&&currentVin.equals(publicWakeTargetVin);}
+            public boolean connected(){return ready&&nativeInitialized;}
+            public boolean busy(){return pollInFlight||driveReadInFlight||writing||!writes.isEmpty()||(legacyMqttPublisher!=null&&legacyMqttPublisher.hasPendingCommand());}
+            public boolean enqueue(Runnable task,long delay){return main.postDelayed(task,delay);}
+            public void connectionLease(){publicWakeLease=true;if(!ready&&gatt==null)beginPassiveReconnectScan();}
+            public boolean wake(String id){return tesla.executeLegacy(id, "wake", new String[0]);}
+            public void release(){main.post(()->{
+                if(publicWakeCoordinator.pending())return;
+                publicWakeInFlight=false;publicWakeLease=false;
+                if(!desiredConnection){main.removeCallbacks(reconnectTask);main.removeCallbacks(scanTimeout);main.removeCallbacks(connectTimeout);stopScan();closeGattOnly();connectionState="disconnected";}
+                log("Explicit public wake result: "+publicWakeCoordinator.outcome()+" (not proof of physical asleep-to-awake transition)");notifyState();
+            });}
+        });
+    }
+    private synchronized int queuePublicWake(){
+        if(publicWakeCoordinator==null||publicWakeConfig==null||!publicWakeConfig.enabled()||!foregroundActive||!nativeInitialized||!keyPresent||!isValidVin(currentVin))return 503;
+        if(publicWakeCoordinator.pending())return 409;
+        publicWakeTargetVin=currentVin;publicWakeInFlight=true;
+        int status=publicWakeCoordinator.request();if(status!=202)publicWakeInFlight=false;return status;
+    }
+    private String publicWakeConnectorSha()throws IOException{
+        java.io.ByteArrayOutputStream bytes=new java.io.ByteArrayOutputStream();
+        try(java.io.InputStream in=getAssets().open("cloudflared-build.json")){
+            byte[] buffer=new byte[1024];int count;while((count=in.read(buffer))!=-1){if(bytes.size()+count>4096)throw new IOException("Invalid connector metadata");bytes.write(buffer,0,count);}
+        }
+        try{String sha=new JSONObject(bytes.toString("UTF-8")).optString("sha256","");if(!sha.matches("[0-9a-f]{64}"))throw new IOException("Invalid connector digest");return sha;}
+        catch(org.json.JSONException e){throw new IOException("Invalid connector metadata");}
+    }
+    private void ensurePublicWakeGateway(){
+        if(publicWakeServer!=null||publicWakeConfig==null||!publicWakeConfig.enabled()||!publicWakeConfig.configured()||!foregroundActive)return;
+        try{
+            publicWakeServer=new PublicWakeHttpServer(publicWakeConfig::bearer,this::queuePublicWake,8787);publicWakeServer.start();
+            cloudflared=new CloudflaredSupervisor(new java.io.File(getApplicationInfo().nativeLibraryDir,"libcloudflared.so"),new java.io.File(getNoBackupFilesDir(),"public-wake"),publicWakeConfig::tunnelToken,publicWakeConnectorSha());cloudflared.start();
+            log("Authenticated wake-only loopback origin started; tunnel readiness is separate; no wake sent");
+        }catch(IOException|RuntimeException e){closePublicWakeGateway();log("Public wake origin could not start; no public command accepted");}
+    }
+    private void closePublicWakeGateway(){
+        if(publicWakeCoordinator!=null)publicWakeCoordinator.cancel();
+        if(publicWakeServer!=null){publicWakeServer.close();publicWakeServer=null;}
+        if(cloudflared!=null){cloudflared.close();cloudflared=null;}
+    }
+    public static String publicWakeSummary(){
+        TeslaBleService service=publicWakeInstance;if(service==null)return "service stopped";
+        PublicWakeHttpServer origin=service.publicWakeServer;CloudflaredSupervisor tunnel=service.cloudflared;
+        return "origin="+(origin!=null&&origin.isRunning())+"; tunnel="+(tunnel==null?"stopped":tunnel.state())+"; wake="+(service.publicWakeCoordinator==null?"idle":service.publicWakeCoordinator.outcome());
+    }
+
     private void startExplicitConnection(String vin) {
         if (!isValidVin(vin)) {
             log("No saved VIN is available; enter it in the app before connecting");
@@ -572,7 +640,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     private void beginPassiveReconnectScan() {
-        if (!desiredConnection || !isValidVin(currentVin) || ready || gatt != null) return;
+        if (!connectionWanted() || !isValidVin(currentVin) || ready || gatt != null) return;
         initializeNativeForVin(currentVin);
         autoConnectAfterScan = true;
         beginScan();
@@ -583,7 +651,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             connectionState = "permission_required";
             log("Bluetooth or precise-location permission missing; saved connection intent preserved for retry");
             notifyState();
-            if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
+            if (autoConnectAfterScan && connectionWanted()) scheduleReconnect();
             return;
         }
         boolean bluetoothEnabled;
@@ -593,7 +661,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             connectionState = adapter == null ? "adapter_unavailable" : "bluetooth_disabled";
             log("Bluetooth is disabled or permission is missing; no wake request was sent");
             notifyState();
-            if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
+            if (autoConnectAfterScan && connectionWanted()) scheduleReconnect();
             return;
         }
         if (scanning) return;
@@ -604,7 +672,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             connectionState = "scanner_unavailable";
             log("Bluetooth LE scanner unavailable");
             notifyState();
-            if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
+            if (autoConnectAfterScan && connectionWanted()) scheduleReconnect();
             return;
         }
         if (expectedAdvertisement.isEmpty() && isValidVin(currentVin)) expectedAdvertisement = expectedAdvertisement(currentVin);
@@ -628,7 +696,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             log("Bluetooth scan could not start; check Bluetooth permissions and adapter state");
             log(scanDiagnostics.summary());
             notifyState();
-            if (autoConnectAfterScan && desiredConnection) scheduleReconnect();
+            if (autoConnectAfterScan && connectionWanted()) scheduleReconnect();
         }
     }
 
@@ -677,7 +745,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         Listener callback = listener;
         if (callback != null) callback.onDeviceFound(name, address, result.getRssi());
         notifyState();
-        if (autoConnectAfterScan && desiredConnection) {
+        if (autoConnectAfterScan && connectionWanted()) {
             stopScan();
             connectSelectedDevice();
         }
@@ -700,14 +768,14 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         if (ready || gatt != null) return;
         if (selectedDevice == null || !isValidVin(currentVin) || !currentVin.equals(selectedVin)) {
             log("No matching Tesla advertisement selected for the saved VIN; passive scan required");
-            if (desiredConnection) beginScan();
+            if (connectionWanted()) beginScan();
             return;
         }
         if (!hasBlePermissions()) {
             connectionState = "permission_required";
             log("Bluetooth connect permission missing; no connection attempted");
             notifyState();
-            if (desiredConnection) scheduleReconnect();
+            if (connectionWanted()) scheduleReconnect();
             return;
         }
         stopScan();
@@ -752,7 +820,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                     connectionState = "disconnected";
                     log("BLE GATT disconnected; vehicle key and pairing data were left unchanged");
                     notifyState();
-                    if (desiredConnection) scheduleReconnect();
+                    if (connectionWanted()) scheduleReconnect();
                 }
             });
         }
@@ -881,7 +949,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     /** Deliberate in-app confirmation only; never dispatched by MQTT, intents, or the ADB command parser. */
     public boolean requestControllerEnrollment(String confirmedVin) {
         if (Looper.myLooper() != Looper.getMainLooper()) return false;
-        if (!ready || !nativeInitialized || !keyPresent || !currentVin.equals(confirmedVin) || !nativeVin.equals(confirmedVin)) return false;
+        if (publicWakeInFlight || !ready || !nativeInitialized || !keyPresent || !currentVin.equals(confirmedVin) || !nativeVin.equals(confirmedVin)) return false;
         if (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand()) {
             log("Wait for the outstanding vehicle command before requesting local key authorization");
             return false;
@@ -892,6 +960,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     private void pairVehicle() {
+        if(publicWakeInFlight){log("Explicit wake owns BLE; pairing deferred");return;}
         if (!ready || !nativeInitialized) {
             log("Pair command requires an active BLE connection; no automatic enrollment was started");
             return;
@@ -909,7 +978,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             if (!fromPoll) log("ChargeState read requires an active BLE connection; use connect first");
             return;
         }
-        if (pollInFlight || driveReadInFlight
+        if (publicWakeInFlight || pollInFlight || driveReadInFlight
                 || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
             if (!fromPoll) log("Native BLE owner busy; overlapping ChargeState read suppressed");
             return;
@@ -932,7 +1001,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private void runPoll() {
         if (!pollEnabled) return;
         if (!ready) return; // No BLE work while unavailable; reconnect scanning has its own backoff.
-        if (pollInFlight || driveReadInFlight || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
+        if (publicWakeInFlight || pollInFlight || driveReadInFlight || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
             // This poll is already due. Recheck owner availability without losing a full interval.
             // No BLE read is sent until the existing read/command has completed.
             schedulePoll(POLL_BUSY_RECHECK_MS);
@@ -984,7 +1053,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             return;
         }
         if (!ready || !nativeInitialized) return;
-        if (driveReadInFlight || pollInFlight
+        if (publicWakeInFlight || driveReadInFlight || pollInFlight
                 || (legacyMqttPublisher != null && legacyMqttPublisher.hasPendingCommand())) {
             scheduleDrivePoll(DRIVE_POLL_INTERVAL_MS);
             return;
@@ -1076,7 +1145,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     private void scheduleReconnect() {
-        if (!desiredConnection) return;
+        if (!connectionWanted()) return;
         long delay = Math.min(MAX_RECONNECT_MS, INITIAL_RECONNECT_MS << Math.min(reconnectAttempts, 4));
         // Retry indefinitely; saturate the diagnostic counter rather than overflowing.
         if (reconnectAttempts < Integer.MAX_VALUE) reconnectAttempts++;
@@ -1093,10 +1162,11 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         connectionState = "connect_failed";
         log(reason);
         notifyState();
-        if (desiredConnection) scheduleReconnect();
+        if (connectionWanted()) scheduleReconnect();
     }
 
     private void disconnectExplicitly() {
+        if(publicWakeCoordinator!=null)publicWakeCoordinator.cancel();
         desiredConnection = false;
         reconnectAttempts = 0;
         preferences.edit().putBoolean(PREF_DESIRED, false).putInt(PREF_RETRIES, 0).apply();
@@ -1112,6 +1182,8 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     private void stopExplicitly() {
+        if(publicWakeConfig!=null)publicWakeConfig.setEnabled(false);
+        closePublicWakeGateway();
         disconnectExplicitly();
         pollEnabled = false;
         preferences.edit().putBoolean(PREF_POLL, false).apply();
@@ -1412,16 +1484,15 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     @Override public void onCommandResult(String json) {
-        if (Looper.myLooper() != Looper.getMainLooper()) {
-            LegacyMqttPublisher target = legacyMqttPublisher;
-            main.post(() -> { if (target == legacyMqttPublisher) onCommandResult(json); });
-            return;
-        }
-        if (legacyMqttPublisher == null || json == null || json.length() > 32768) return;
-        try {
-            JSONObject value = new JSONObject(json);
-            legacyMqttPublisher.onCommandResult(value.optString("request_id", ""), value.optString("status", "failed"), value.optBoolean("acknowledged", false));
-        } catch (JSONException ignored) { log("Native MQTT command result was malformed; no success was assumed"); }
+        if(json==null||json.length()>32768)return;
+        if(Looper.myLooper()!=Looper.getMainLooper()){main.post(()->onCommandResult(json));return;}
+        try{
+            JSONObject value=new JSONObject(json);
+            String id=value.optString("request_id","");String status=value.optString("status","failed");boolean acknowledged=value.optBoolean("acknowledged",false);
+            // Signal only: do not close/reenter the native owner inside its JNI callback.
+            if(publicWakeCoordinator!=null&&id.startsWith("publicwake_"))main.post(()->publicWakeCoordinator.result(id,status,acknowledged));
+            if(legacyMqttPublisher!=null)legacyMqttPublisher.onCommandResult(id,status,acknowledged);
+        }catch(JSONException ignored){log("Native command result malformed; no success assumed");}
     }
 
     @Override public void onLegacyTelemetry(String json) {
@@ -1491,6 +1562,8 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     }
 
     @Override public void onDestroy() {
+        closePublicWakeGateway();
+        if(publicWakeInstance==this)publicWakeInstance=null;
         serviceStarted = false;
         foregroundActive = false;
         main.removeCallbacks(ticker);
