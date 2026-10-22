@@ -77,7 +77,7 @@ DriveState uses a separate monotonic freshness window of 1.5 seconds. Its fields
 - A manual `read-charge` requests one ChargeState read while the GATT transport is ready. The native request uses `NO_WAKE_SKIP`/`NO_WAKE_FAIL`; it does not issue a wake command. A failed/asleep request does not create telemetry.
 - Periodic reads are opt-in. `poll-on` begins polling at the saved interval; `poll-off` stops it. Poll intervals are limited to 15–3600 seconds (default 15). Failures back off without a wake request.
 - A successful authenticated charge payload is stored with a receive-time UTC timestamp and survives service recreation. BLE disconnection does not erase the last-known charge payload. DriveState is memory-only and is never persisted.
-- The service persists an explicit connection desire. On normal process restart it resumes a passive VIN-matched scan only when that desire is set. The boot receiver does the same after `BOOT_COMPLETED` for the active user, using bounded reconnect attempts. A real Screenmate cold-power-cycle test is still required.
+- The service persists an explicit connection desire. On normal process restart it resumes a passive VIN-matched scan only when that desire is set. The boot receiver does the same after `BOOT_COMPLETED` for the active user, with capped backoff until explicitly disconnected. A real Screenmate cold-power-cycle test is still required.
 
 ## Consumer requirements for DiPlay
 

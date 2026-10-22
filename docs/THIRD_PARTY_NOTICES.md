@@ -1,0 +1,13 @@
+# TeslaBLE ScreenMate preview — third-party notices
+
+This is not a Tesla, Apple or ScreenMate product. No affiliation or endorsement is implied. The controller source is distributed under GNU AGPL version 3; third-party components retain their respective licenses. Preserve full texts, copyright notices and applicable source obligations. These notices are not a legal conclusion or a certification grant.
+
+- **yoziru/tesla-ble**, immutable commit `42b899b7816cc3700b7361e65b526fdc04d19a51`, AGPL-3.0. Copyright and notices retained in [licenses](licenses/). [Source](https://github.com/yoziru/tesla-ble/tree/42b899b7816cc3700b7361e65b526fdc04d19a51).
+- **nanopb 0.4.9.1**, zlib license. [Source](https://github.com/nanopb/nanopb/tree/0.4.9.1); full license included.
+- **Espressif Mbed TLS mbedtls-3.6.6-idf**, Apache-2.0. [Source](https://github.com/espressif/mbedtls/tree/mbedtls-3.6.6-idf); full license included. Preserve submodule source/license terms too.
+- **Eclipse Paho Java MQTT 1.2.5**, Eclipse Public License and Eclipse Distribution License as supplied in its Maven artifact; full distributed license notices included where present. [Source](https://github.com/eclipse-paho/paho.mqtt.java/tree/v1.2.5).
+- **Android desugar_jdk_libs 2.1.5** and Android runtime interfaces: Google/AOSP/OpenJDK respective notices, including applicable Apache-2.0 and GPLv2 Classpath Exception terms; use the upstream distributions for their full source/license detail. [Source](https://github.com/google/desugar_jdk_libs).
+- **LLVM libc++ Android NDK runtime**, Apache-2.0 with LLVM exceptions; part of NDK 28.2.13676358. Preserve the NDK's supplied notices when redistributing the bundled C++ runtime.
+- **Cloudflare cloudflared**, commit `de6376c5af4a67cbc65258682e5a01781827643d`, upstream Apache-2.0 plus Go BSD-style and module-specific licenses. The APK includes the actual build's aggregated upstream/Go/module notices at `assets/cloudflared-THIRD-PARTY-NOTICES.txt`; a standalone copy accompanies this release. [Pinned source and build inputs](../tools/cloudflared-android.lock.json).
+
+Release source includes the controller build scripts and immutable dependency references, with additional native dependency source archives supplied alongside. The APK never includes the Android signing keystore or a user's vehicle/API/MQTT/Cloudflare credentials. DiPlay's separate experimental CarPlay identity/disclaimer and notices belong to the DiPlay release, not this controller APK.
