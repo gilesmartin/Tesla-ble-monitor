@@ -27,6 +27,8 @@ class JSONObject {
   if(kind.equals("EVENT")){values.put("section","drive");values.put("values",new JSONObject("DRIVE"));}
   if(kind.equals("DRIVE")){values.put("shift_state",RoutingChargeHarness.gear);values.put("speed",RoutingChargeHarness.speed);}
   if(kind.equals("CHARGE"))values.put("charging",RoutingChargeHarness.charging);
+  if(kind.equals("VCSEC_EVENT")){values.put("section","vcsec");values.put("values",new JSONObject("VCSEC_VALUES"));}
+  if(kind.equals("VCSEC_VALUES")){values.put("asleep",false);values.put("user_present",true);}
  }
  Object opt(String k){return values.get(k);} String optString(String k,String d){Object o=opt(k);return o instanceof String?(String)o:d;}
  JSONObject optJSONObject(String k){Object o=opt(k);return o instanceof JSONObject?(JSONObject)o:null;}
@@ -37,7 +39,7 @@ class SystemClock {static long elapsedRealtime(){return RoutingChargeHarness.clo
 class LegacyMqttStateMapper {static Map<String,String> map(String s,Map<String,String>m){return m;}}
 class LegacyMqttPublisher {boolean pending;boolean hasPendingCommand(){return pending;}void onTelemetry(String s,Map<String,String>m){}}
 public class RoutingChargeHarness implements Sink {
- static long clock=1000000;static String gear="D";static double speed=30;static boolean charging=false;
+ static long clock=1000000;static String gear="D";static double speed=30;static boolean charging=false;static boolean occupancyReplies=false;
  boolean publicWakeInFlight=false,ready=true,nativeInitialized=true,pollEnabled=true,pollInFlight=false,driveReadInFlight=true,driveSubscriptionActive=true;
  long driveSubscriptionExpiresAtElapsedMs=clock+60000,lastDriveStateAtElapsedMs=clock,lastChargeAtElapsedMs=-1,lastChargeRequestElapsedMs=-1;
  String currentVin="SYNTHETIC",nativeVin="SYNTHETIC",legacyMqttVin="SYNTHETIC",lastChargeJson="CHARGE",lastDriveStateJson;
@@ -62,13 +64,14 @@ public class RoutingChargeHarness implements Sink {
  void flush(){int n=0;while(!q.isEmpty()){if(++n>1000)throw new AssertionError("immediate busy loop");q.remove().run();}}
  void advance(long target){int n=0;while(!timed.isEmpty()&&timed.firstKey()<=target){if(++n>2000)throw new AssertionError("timer busy loop");var e=timed.pollFirstEntry();clock=e.getKey();for(var a:e.getValue())a.run();flush();}clock=target;flush();}
  }
- class Tesla {void readChargeState(){reads++;main.post(()->onTelemetry("CHARGE"));}boolean readLegacyState(String section){reads++;if(section.equals("charge")||section.equals("all"))main.post(()->onTelemetry("CHARGE"));return true;}}
+ class Tesla {void readChargeState(){reads++;if(occupancyReplies){main.post(()->onLegacyTelemetry("VCSEC_EVENT"));main.postDelayed(()->onTelemetry("CHARGE"),250);}else main.post(()->onTelemetry("CHARGE"));}boolean readLegacyState(String section){reads++;if(section.equals("charge")||section.equals("all"))main.post(()->onTelemetry("CHARGE"));return true;}}
  boolean isValidVin(String v){return true;}void scheduleDrivePoll(long ms){lastScheduledDrive=ms;}void finishDriveReadFailure(){driveReadInFlight=false;}void log(String m){}void finishChargeFailure(String s){throw new AssertionError(s);}
 '''.replace('TASK',task)+methods+r'''
  void drive(){driveReadInFlight=true;onLegacyTelemetry("EVENT");main.flush();}
  public static void main(String[]args)throws Exception{
   RoutingChargeHarness s=new RoutingChargeHarness();String mode=args[0];
   if(mode.equals("persisted_freshness")){s.drive();Long saved=s.preferences.values.get("last_charge_freshness_ms");if(saved==null||saved!=30000L)throw new AssertionError("accepted driving sample freshness provenance not persisted");return;}
+  if(mode.equals("timer_occupied_no_phone_jitter")){occupancyReplies=true;s.driveReadInFlight=false;s.driveSubscriptionActive=false;s.vehicleAsleep=false;s.vehicleUserPresent=true;s.lastVehicleStatusAtElapsedMs=clock-1000;s.lastChargeAtElapsedMs=clock;long start=clock;s.main.post(s.adaptiveChargeTask);s.main.flush();s.main.advance(start+31000);if(s.reads!=1)throw new AssertionError("fresh occupancy expired before first realistic 30s charge update");s.main.advance(start+62000);if(s.reads!=2)throw new AssertionError("occupied charge cycle did not continue through VCSEC/charge response jitter");return;}
   if(mode.equals("publicwake")){s.driveReadInFlight=false;s.publicWakeInFlight=true;s.requestCharge(false);if(s.reads!=0)throw new AssertionError("manual charge overlapped explicit wake");s.publicWakeInFlight=false;s.requestCharge(false);if(s.reads!=1)throw new AssertionError("charge remained blocked after wake");return;}
   if(mode.equals("manual_owner")){s.requestCharge(false);if(s.reads!=0)throw new AssertionError("manual charge overlapped DriveState native owner");return;}
   if(mode.equals("accepted_sample")){s.drive();if(s.reads!=1)throw new AssertionError("initial overdue battery read missing");s.onTelemetry("CHARGE");if(s.lastChargeAtElapsedMs!=clock||s.pollInFlight)throw new AssertionError("accepted sample did not refresh monotonic battery state");if(s.lastScheduledPoll!=720000)throw new AssertionError("normal saved charge interval changed");clock+=1000;s.drive();if(s.reads!=1)throw new AssertionError("fresh accepted battery read was duplicated");clock+=30000;s.driveSubscriptionExpiresAtElapsedMs=clock+60000;s.drive();if(s.reads!=2)throw new AssertionError("next real battery read missing after driving interval");return;}
@@ -99,6 +102,7 @@ public class RoutingChargeHarness implements Sink {
    c=subprocess.run(['javac','-d',d,str(policy),str(p)],capture_output=True,text=True);self.assertEqual(c.returncode,0,c.stderr)
    r=subprocess.run(['java','-cp',d,'RoutingChargeHarness',mode],capture_output=True,text=True);self.assertEqual(r.returncode,0,r.stdout+r.stderr)
  def test_accepted_sample_persists_freshness_provenance(self):self.run_case("persisted_freshness")
+ def test_occupied_no_phone_cycles_tolerate_security_charge_response_jitter(self):self.run_case("timer_occupied_no_phone_jitter")
  def test_production_periodic_runnable_charges_twice_without_lease_or_drive_callback(self):self.run_case('timer_charging')
  def test_production_periodic_runnable_quiets_when_presence_proof_expires(self):self.run_case('timer_presence_expiry')
  def test_production_periodic_runnable_defers_owner_then_catches_up(self):self.run_case('timer_busy')

@@ -30,3 +30,5 @@ No CarPlay reconnection, enrollment/calibration reset, radio toggle, network cha
 ### Cache provenance across restarts
 
 An accepted sample persists its freshness ceiling alongside its timestamp. Process restart cannot turn a 30-second driving sample into a five-minute parked sample. Legacy or invalid provenance defaults to 30 seconds until a new authenticated reading arrives.
+
+Occupied evidence remains valid for at most 45 seconds: longer than the 30-second read interval plus bounded transport/scheduler delay. A security response can precede ChargeState, so equal evidence/read timers can silently stop charge-only consumers. Sleep/absence still stops acceleration; expiry tests do not synthesize renewed presence.

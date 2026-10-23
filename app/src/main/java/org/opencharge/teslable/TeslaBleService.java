@@ -1138,7 +1138,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         }
         long now = SystemClock.elapsedRealtime();
         boolean occupied = Boolean.FALSE.equals(vehicleAsleep) && Boolean.TRUE.equals(vehicleUserPresent)
-                && TelemetryPollingPolicy.recent(now - lastVehicleStatusAtElapsedMs, 30_000L);
+                && TelemetryPollingPolicy.recent(now - lastVehicleStatusAtElapsedMs, 45_000L);
         if (!TelemetryPollingPolicy.driveProbe(Boolean.TRUE.equals(vehicleAsleep), driveProbeAllowed,
                 occupied, now - lastDriveStateAtElapsedMs, driveGear(), driveSpeed())) return;
         driveProbeAllowed = false;
@@ -1195,7 +1195,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 SystemClock.elapsedRealtime() - lastDriveStateAtElapsedMs, driveGear(), driveSpeed(),
                 chargeAgeMillis(), charging, Boolean.FALSE.equals(vehicleAsleep)
                         && Boolean.TRUE.equals(vehicleUserPresent)
-                        && TelemetryPollingPolicy.recent(SystemClock.elapsedRealtime() - lastVehicleStatusAtElapsedMs, 30_000L));
+                        && TelemetryPollingPolicy.recent(SystemClock.elapsedRealtime() - lastVehicleStatusAtElapsedMs, 45_000L));
     }
 
     private String driveGear() {
