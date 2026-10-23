@@ -7,6 +7,9 @@
          Precise location permission is used for BLE delivery, not GPS collection. -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- All-time location permits delivery of Tesla BLE beacons after the UI closes.
+         No GPS/provider is used. A connectedDevice FGS alone does not grant location capability. -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN" />
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
     <uses-permission android:name="android.permission.INTERNET" />

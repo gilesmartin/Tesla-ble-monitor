@@ -103,6 +103,9 @@ public final class MainActivity extends Activity implements TeslaBleService.List
         body.addView(makeButton("Public wake / Cloudflare Tunnel", () -> startActivity(new Intent(MainActivity.this, PublicWakeSettingsActivity.class))));
         body.addView(makeButton("MQTT / Home Assistant settings", () ->
             startActivity(new Intent(MainActivity.this, MqttSettingsActivity.class))));
+        body.addView(makeButton("Background Bluetooth permission", () ->
+                withPermissions(this::showBackgroundBlePermissionHelp)));
+        body.addView(makeText("Automatic reconnection needs Location: Allow all the time so Android delivers Tesla Bluetooth beacons while this screen is closed. The app does not collect GPS location.", 13));
         body.addView(makeText("Vehicle VIN", 15));
         vinField = new EditText(this);
         vinField.setSingleLine(true);
@@ -144,6 +147,26 @@ public final class MainActivity extends Activity implements TeslaBleService.List
         body.addView(logView);
         scroll.addView(body);
         setContentView(scroll);
+    }
+
+    private void showBackgroundBlePermissionHelp() {
+        if (Build.VERSION.SDK_INT < 29 ||
+                checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            showLog("Background Bluetooth permission is already allowed; existing retry policy remains active");
+            return;
+        }
+        new android.app.AlertDialog.Builder(this)
+                .setTitle("Allow Bluetooth discovery in the background")
+                .setMessage("Android treats Tesla's Bluetooth beacon as location-sensitive. To reconnect after this screen closes or after boot, open Permissions > Location and select Allow all the time. This app does not collect GPS location. This is separate from the ordinary Bluetooth/precise-location permission request.")
+                .setNegativeButton("Not now", null)
+                .setPositiveButton("Open app settings", (dialog, which) -> {
+                    try {
+                        startActivity(new Intent("android.settings.APPLICATION_DETAILS_SETTINGS",
+                                android.net.Uri.parse("package:" + getPackageName())));
+                    } catch (android.content.ActivityNotFoundException e) {
+                        showLog("Open Android app settings for Tesla BLE Monitor and select Location: Allow all the time");
+                    }
+                }).show();
     }
 
     private void confirmControllerEnrollment() {

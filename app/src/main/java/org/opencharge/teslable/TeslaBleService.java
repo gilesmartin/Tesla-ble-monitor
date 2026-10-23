@@ -654,6 +654,15 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             if (autoConnectAfterScan && connectionWanted()) scheduleReconnect();
             return;
         }
+        if (autoConnectAfterScan && !hasBackgroundBlePermission()) {
+            // Fine runtime permission can be granted while AppOps rejects delivery after
+            // the UI closes. Do not pretend a connectedDevice FGS has location capability.
+            log("Background Bluetooth discovery needs Location: Allow all the time; no GPS is collected. Saved connection intent preserved.");
+            if (connectionWanted()) scheduleReconnect();
+            connectionState = "background_scan_permission_required";
+            notifyState();
+            return;
+        }
         boolean bluetoothEnabled;
         try { bluetoothEnabled = adapter != null && adapter.isEnabled(); }
         catch (SecurityException e) { bluetoothEnabled = false; }
@@ -1231,6 +1240,11 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         catch (SecurityException | IllegalStateException ignored) { }
     }
 
+    private boolean hasBackgroundBlePermission() {
+        return Build.VERSION.SDK_INT < 29 ||
+                checkSelfPermission(Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED;
+    }
+
     private boolean hasBlePermissions() {
         // Bluetooth permission alone is insufficient for Tesla advertisements that
         // Android classifies as location-capable beacons. Keep retries pending until
@@ -1386,6 +1400,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
             response.put("authentication_status", authenticationState);
             response.put("enrolled_key_present", keyPresent);
             response.put("last_authenticated_update", lastChargeAtMs > 0 ? isoTime(lastChargeAtMs) : JSONObject.NULL);
+            response.put("background_ble_permission_granted", hasBackgroundBlePermission());
             response.put("polling_enabled", pollEnabled);
             response.put("poll_interval_seconds", pollIntervalSeconds);
             response.put("telemetry_available", lastChargeJson != null && lastChargeAtMs > 0);
