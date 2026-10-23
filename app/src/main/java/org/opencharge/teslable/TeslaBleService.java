@@ -80,6 +80,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private static final String PREF_RETRIES = "reconnect_attempts";
     private static final String PREF_LAST_CHARGE = "last_charge_json";
     private static final String PREF_LAST_CHARGE_AT = "last_charge_at_ms";
+    private static final String PREF_LAST_CHARGE_FRESHNESS = "last_charge_freshness_ms";
     private static final String CHANNEL_ID = "tesla_ble_monitor";
     private static final int NOTIFICATION_ID = 7303;
     private static final int DEFAULT_POLL_SECONDS = 15;
@@ -166,7 +167,7 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
     private long lastChargeRequestElapsedMs = -1L;
     private int pollFailures;
     private volatile String lastPollFailure = "";
-    private volatile long lastChargeFreshnessMs = 300_000L;
+    private volatile long lastChargeFreshnessMs = 30_000L;
     private volatile Boolean vehicleAsleep;
     private volatile Boolean vehicleUserPresent;
     private volatile long lastVehicleStatusAtElapsedMs = -1L;
@@ -289,6 +290,8 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
         reconnectAttempts = Math.max(0, preferences.getInt(PREF_RETRIES, 0));
         lastChargeJson = preferences.getString(PREF_LAST_CHARGE, null);
         lastChargeAtMs = preferences.getLong(PREF_LAST_CHARGE_AT, 0L);
+        lastChargeFreshnessMs = TelemetryPollingPolicy.restoredFreshness(
+                preferences.getLong(PREF_LAST_CHARGE_FRESHNESS, 30_000L));
         currentVin = preferences.getString(PREF_VIN, "");
         if (!isValidVin(currentVin)) {
             String legacyVin = getSharedPreferences(LEGACY_ACTIVITY_PREFS, MODE_PRIVATE).getString(PREF_VIN, "");
@@ -1729,15 +1732,17 @@ public final class TeslaBleService extends Service implements NativeTesla.Sink {
                 lastChargeJson = value.toString();
                 lastChargeAtMs = timestamp;
                 lastChargeAtElapsedMs = SystemClock.elapsedRealtime();
+                lastChargeFreshnessMs = TelemetryPollingPolicy.freshness(adaptivePollingMode());
+                lastChargeFreshnessMs = activeFreshnessMillis();
                 preferences.edit().putString(PREF_LAST_CHARGE, lastChargeJson)
-                        .putLong(PREF_LAST_CHARGE_AT, timestamp).apply();
+                        .putLong(PREF_LAST_CHARGE_AT, timestamp)
+                        .putLong(PREF_LAST_CHARGE_FRESHNESS, lastChargeFreshnessMs).apply();
             }
             authenticationState = "authenticated_charge_state_received";
             keyPresent = true;
             pollInFlight = false;
             pollFailures = 0;
             lastPollFailure = "";
-            lastChargeFreshnessMs = TelemetryPollingPolicy.freshness(adaptivePollingMode());
             main.removeCallbacks(chargeTimeout);
             log("Authenticated ChargeState received and stored");
             Listener callback = listener;

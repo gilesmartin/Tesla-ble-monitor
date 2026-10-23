@@ -44,9 +44,9 @@ public class RoutingChargeHarness implements Sink {
  Boolean vehicleAsleep,vehicleMoving,vehicleUserPresent;long lastVehicleStatusAtElapsedMs=-1,lastChargeFreshnessMs=300000;boolean driveProbeAllowed,vcsecProbeInFlight,serviceStarted=true;long lastTelemetryAccessElapsedMs=-1,bootstrapReadDeadlineMs=-1;String lastPollFailure="";
  int reads,pollFailures,driveReadFailures,pollIntervalSeconds=720; LegacyMqttPublisher legacyMqttPublisher;
  long lastChargeAtMs,lastScheduledPoll=-1,lastScheduledDrive=-1;final Object stateLock=new Object();String authenticationState;boolean keyPresent;
- static final String PREF_LAST_CHARGE="charge",PREF_LAST_CHARGE_AT="timestamp";
+ static final String PREF_LAST_CHARGE="charge",PREF_LAST_CHARGE_AT="timestamp",PREF_LAST_CHARGE_FRESHNESS="last_charge_freshness_ms";
  interface Listener {void onTelemetry(String json);} Listener listener;
- class Preferences {Preferences edit(){return this;}Preferences putString(String k,String v){return this;}Preferences putLong(String k,long v){return this;}void apply(){}}
+ class Preferences {final Map<String,Long> values=new HashMap<>(); Preferences edit(){return this;}Preferences putString(String k,String v){return this;}Preferences putLong(String k,long v){values.put(k,v);return this;}long getLong(String k,long fallback){return values.getOrDefault(k,fallback);}void apply(){}}
  final Preferences preferences=new Preferences();void updateMqttTelemetry(){}void notifyState(){}String buildTelemetryJson(){return "SAFE";}void schedulePoll(long delay){lastScheduledPoll=delay;}
  static final long DRIVE_POLL_INTERVAL_MS=250,DRIVE_FRESHNESS_MS=1500,DRIVE_READ_TIMEOUT_MS=1500,DRIVE_SUBSCRIPTION_LEASE_MS=15000,CHARGE_TIMEOUT_MS=12000,ROUTING_CHARGE_INTERVAL_MS=30000,ROUTING_CHARGE_MAX_BACKOFF_MS=120000,ACTIVE_CHARGE_INTERVAL_MS=10000,CHARGING_CHARGE_INTERVAL_MS=15000;
  final Runnable chargeTimeout=()->{},driveTimeoutTask=()->{},drivePollTask=()->{},vcsecProbeTimeout=()->{};
@@ -68,6 +68,7 @@ public class RoutingChargeHarness implements Sink {
  void drive(){driveReadInFlight=true;onLegacyTelemetry("EVENT");main.flush();}
  public static void main(String[]args)throws Exception{
   RoutingChargeHarness s=new RoutingChargeHarness();String mode=args[0];
+  if(mode.equals("persisted_freshness")){s.drive();Long saved=s.preferences.values.get("last_charge_freshness_ms");if(saved==null||saved!=30000L)throw new AssertionError("accepted driving sample freshness provenance not persisted");return;}
   if(mode.equals("publicwake")){s.driveReadInFlight=false;s.publicWakeInFlight=true;s.requestCharge(false);if(s.reads!=0)throw new AssertionError("manual charge overlapped explicit wake");s.publicWakeInFlight=false;s.requestCharge(false);if(s.reads!=1)throw new AssertionError("charge remained blocked after wake");return;}
   if(mode.equals("manual_owner")){s.requestCharge(false);if(s.reads!=0)throw new AssertionError("manual charge overlapped DriveState native owner");return;}
   if(mode.equals("accepted_sample")){s.drive();if(s.reads!=1)throw new AssertionError("initial overdue battery read missing");s.onTelemetry("CHARGE");if(s.lastChargeAtElapsedMs!=clock||s.pollInFlight)throw new AssertionError("accepted sample did not refresh monotonic battery state");if(s.lastScheduledPoll!=720000)throw new AssertionError("normal saved charge interval changed");clock+=1000;s.drive();if(s.reads!=1)throw new AssertionError("fresh accepted battery read was duplicated");clock+=30000;s.driveSubscriptionExpiresAtElapsedMs=clock+60000;s.drive();if(s.reads!=2)throw new AssertionError("next real battery read missing after driving interval");return;}
@@ -97,6 +98,7 @@ public class RoutingChargeHarness implements Sink {
    policy=Path(d)/'TelemetryPollingPolicy.java';policy.write_text((ROOT/'app/src/main/java/org/opencharge/teslable/TelemetryPollingPolicy.java').read_text().replace('package org.opencharge.teslable;',''))
    c=subprocess.run(['javac','-d',d,str(policy),str(p)],capture_output=True,text=True);self.assertEqual(c.returncode,0,c.stderr)
    r=subprocess.run(['java','-cp',d,'RoutingChargeHarness',mode],capture_output=True,text=True);self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+ def test_accepted_sample_persists_freshness_provenance(self):self.run_case("persisted_freshness")
  def test_production_periodic_runnable_charges_twice_without_lease_or_drive_callback(self):self.run_case('timer_charging')
  def test_production_periodic_runnable_quiets_when_presence_proof_expires(self):self.run_case('timer_presence_expiry')
  def test_production_periodic_runnable_defers_owner_then_catches_up(self):self.run_case('timer_busy')

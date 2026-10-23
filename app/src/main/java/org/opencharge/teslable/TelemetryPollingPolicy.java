@@ -43,4 +43,9 @@ final class TelemetryPollingPolicy {
         if ("P".equals(gear) || "N".equals(gear)) return false;
         return recent(driveAge, 15_000L) && driving(gear, speed);
     }
+    static long restoredFreshness(long saved) {
+        if (saved == 30_000L || saved == 45_000L || saved == 90_000L || saved == 300_000L) return saved;
+        // Legacy/corrupt cache metadata cannot establish the sample's original mode.
+        return 30_000L;
+    }
 }

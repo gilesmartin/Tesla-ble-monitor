@@ -26,3 +26,7 @@ A GATT write-completion deadline captures the exact connection and operation gen
 The authenticated IPv4-loopback API is health-checked and rebound after listener death or bind failure, without replacing a healthy listener. Status exposes mode, effective charge interval/freshness, age, permission state, write-in-flight state and read/API failures. Process liveness is not fresh-data availability.
 
 No CarPlay reconnection, enrollment/calibration reset, radio toggle, network change, or vehicle-control command is part of this update. Boot/crash/user-switch and driving/charging/sleep acceptance results must be reported separately from source tests/build/install.
+
+### Cache provenance across restarts
+
+An accepted sample persists its freshness ceiling alongside its timestamp. Process restart cannot turn a 30-second driving sample into a five-minute parked sample. Legacy or invalid provenance defaults to 30 seconds until a new authenticated reading arrives.
