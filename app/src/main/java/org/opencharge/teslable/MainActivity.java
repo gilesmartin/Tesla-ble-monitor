@@ -99,7 +99,7 @@ public final class MainActivity extends Activity implements TeslaBleService.List
         TextView title = makeText("Tesla BLE Monitor", 26);
         title.setTextColor(Color.rgb(14, 48, 82));
         body.addView(title);
-        body.addView(makeText("Bluetooth is owned by the foreground service. Reads use the native no-wake policy; polling is opt-in.", 13));
+        body.addView(makeText("Bluetooth is owned by the foreground service. Adaptive polling uses no-wake reads: 10s driving, 15s charging, 30s occupied; unoccupied fallback is at least 2 minutes. Polling is opt-in.", 13));
         body.addView(makeButton("Public wake / Cloudflare Tunnel", () -> startActivity(new Intent(MainActivity.this, PublicWakeSettingsActivity.class))));
         body.addView(makeButton("MQTT / Home Assistant settings", () ->
             startActivity(new Intent(MainActivity.this, MqttSettingsActivity.class))));
@@ -132,7 +132,7 @@ public final class MainActivity extends Activity implements TeslaBleService.List
         body.addView(makeButton("Authorize existing key for controls (manual; parked only)", this::confirmControllerEnrollment));
         body.addView(makeButton("4. Read ChargeState (no intentional wake)", () ->
             withPermissions(() -> dispatch(TeslaBleService.ACTION_UI_READ, null, null))));
-        body.addView(makeButton("Enable 15-second polling", () -> withPermissions(() ->
+        body.addView(makeButton("Enable adaptive polling", () -> withPermissions(() ->
             dispatch(TeslaBleService.ACTION_COMMAND, null, "poll-on"))));
         body.addView(makeButton("Disable polling", () -> dispatch(TeslaBleService.ACTION_COMMAND, null, "poll-off")));
         body.addView(makeButton("Disconnect", () -> withPermissions(() ->

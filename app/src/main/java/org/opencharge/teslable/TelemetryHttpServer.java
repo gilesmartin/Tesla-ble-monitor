@@ -31,6 +31,7 @@ public final class TelemetryHttpServer implements AutoCloseable {
     private final Consumer<Boolean> driveSubscription;
     private final InetAddress bindAddress;
     private final int requestedPort;
+    private Runnable telemetryAccess = () -> { };
     private volatile boolean running;
     private volatile ServerSocket serverSocket;
     private volatile Thread acceptThread;
@@ -43,6 +44,20 @@ public final class TelemetryHttpServer implements AutoCloseable {
     public TelemetryHttpServer(Supplier<String> telemetryJson, Supplier<String> statusJson,
                                Supplier<String> bearerToken, Consumer<Boolean> driveSubscription) {
         this(telemetryJson, statusJson, bearerToken, driveSubscription, loopbackAddress(), DEFAULT_PORT);
+    }
+
+    public TelemetryHttpServer(Supplier<String> telemetryJson, Supplier<String> statusJson,
+                               Supplier<String> bearerToken, Consumer<Boolean> driveSubscription,
+                               Runnable telemetryAccess) {
+        this(telemetryJson, statusJson, bearerToken, driveSubscription, telemetryAccess, loopbackAddress(), DEFAULT_PORT);
+    }
+
+    public TelemetryHttpServer(Supplier<String> telemetryJson, Supplier<String> statusJson,
+                               Supplier<String> bearerToken, Consumer<Boolean> driveSubscription,
+                               Runnable telemetryAccess, InetAddress bindAddress, int port) {
+        this(telemetryJson, statusJson, bearerToken, driveSubscription, bindAddress, port);
+        if (telemetryAccess == null) throw new IllegalArgumentException("telemetry callback required");
+        this.telemetryAccess = telemetryAccess;
     }
 
     public TelemetryHttpServer(Supplier<String> telemetryJson, Supplier<String> statusJson,
@@ -184,6 +199,13 @@ public final class TelemetryHttpServer implements AutoCloseable {
         if (!"GET".equals(request.method)) {
             respond(client.getOutputStream(), 405, "Method Not Allowed", error("method_not_allowed"));
             return;
+        }
+        if (telemetryRoute) {
+            try { telemetryAccess.run(); }
+            catch (RuntimeException e) {
+                respond(client.getOutputStream(), 500, "Internal Server Error", error("telemetry_interest_unavailable"));
+                return;
+            }
         }
         if (telemetryRoute && request.driveHeartbeat) {
             try {

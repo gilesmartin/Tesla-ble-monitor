@@ -17,10 +17,10 @@ class V03Contract(unittest.TestCase):
     def test_identity_and_version_are_update_compatible(self):
         gradle = source("app/build.gradle")
         self.assertRegex(gradle, r"applicationId\s+['\"]org\.opencharge\.teslable['\"]")
-        self.assertRegex(gradle, r"versionName\s+['\"]0\.3\.9-background-ble['\"]")
+        self.assertRegex(gradle, r"versionName\s+['\"]0\.3\.10-continuity['\"]")
         code = re.search(r"versionCode\s+(\d+)", gradle)
         self.assertIsNotNone(code)
-        self.assertGreater(int(code.group(1)), 3)
+        self.assertGreater(int(code.group(1)), 14)
 
     def test_foreground_service_is_private_and_typed(self):
         root = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()

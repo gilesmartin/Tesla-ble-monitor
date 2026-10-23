@@ -59,11 +59,12 @@ public final class TelemetryHttpServerHarness {
         AtomicReference<String> token = new AtomicReference<>(TOKEN);
         AtomicBoolean driveSubscribed = new AtomicBoolean(false);
         AtomicInteger subscriptionEvents = new AtomicInteger(0);
+        AtomicInteger telemetryAccesses = new AtomicInteger(0);
         TelemetryHttpServer server = new TelemetryHttpServer(
             () -> "{\"available\":false,\"fresh\":false}",
             () -> "{\"service_running\":true}", token::get,
             enabled -> { driveSubscribed.set(enabled); subscriptionEvents.incrementAndGet(); },
-            InetAddress.getByName("127.0.0.1"), 0);
+            telemetryAccesses::incrementAndGet, InetAddress.getByName("127.0.0.1"), 0);
         server.start();
         try {
             check(server.getBindAddress().getHostAddress().equals("127.0.0.1"), "listener must bind IPv4 loopback");
@@ -73,11 +74,13 @@ public final class TelemetryHttpServerHarness {
             check(!missing.body.contains(TOKEN), "secret token must not be echoed");
             Reply invalid = request(server.getPort(), "GET", "/v1/status", bearer("wrong-token"), 0);
             check(invalid.status == 401, "invalid bearer token must be rejected");
+            check(telemetryAccesses.get() == 0, "unauthorized HTTP request triggered acquisition interest");
             Reply telemetry = request(server.getPort(), "GET", "/v1/telemetry", bearer(TOKEN), 0);
             check(telemetry.status == 200 && telemetry.body.contains("\"fresh\":false"), "authorized telemetry route failed");
             check(telemetry.headers.toLowerCase().contains("cache-control: no-store"), "responses must not be cached");
             Reply status = request(server.getPort(), "GET", "/v1/status", bearer(TOKEN), 0);
             check(status.status == 200 && status.body.contains("service_running"), "authorized status route failed");
+            check(telemetryAccesses.get() == 1, "status route triggered acquisition or authorized telemetry did not");
             check(request(server.getPort(), "POST", "/v1/telemetry/subscribe", null, 0).status == 401,
                 "drive subscription must require bearer authentication");
             check(!driveSubscribed.get() && subscriptionEvents.get() == 0,
